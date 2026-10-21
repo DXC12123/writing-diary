@@ -1,0 +1,53 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.xiaojingyu.writingdiary'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.xiaojingyu.writingdiary'
+        minSdk 26
+        targetSdk 34
+        versionCode 7
+        versionName '0.7'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // 这是外壳工程，别让 lint 的样式建议挡住出包
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
+
+dependencies {
+    // WebViewAssetLoader：把页面挂在 https://appassets.androidplatform.net 下，
+    // 这样 localStorage 才有稳定的 https 源（直接开 file:// 在部分机型上会清零）
+    implementation 'androidx.webkit:webkit:1.11.0'
+}
+
+/*
+  index.html 仍然是唯一源码：每次构建前把它复制到 assets，仓库里不存副本。
+  改界面只改根目录的 index.html，这里不需要动。
+*/
+def syncWeb = tasks.register('syncWeb', Copy) {
+    from rootProject.file('../index.html')
+    into layout.projectDirectory.dir('src/main/assets')
+}
+
+afterEvaluate {
+    tasks.named('preBuild').configure { dependsOn syncWeb }
+}
