@@ -378,6 +378,9 @@ html.kb-on .wfoot{bottom:var(--kb,0px);}
 }
 .ta::placeholder{color:var(--plh);}
 .ta[readonly]{color:var(--readonly);}
+/* 正文字体跟随系统：只换字族，字号（--fs）与行高仍按皮肤 */
+html[data-font="system"] .ta,
+html[data-font="system"] .entry .content{font-family:var(--sans);}
 .locked-note{
   margin:0 14px 6px;padding:9px 12px;border-radius:10px;background:var(--rust-soft);
   color:var(--rust-ink);font-size:12.5px;line-height:1.6;
@@ -386,6 +389,33 @@ html.kb-on .wfoot{bottom:var(--kb,0px);}
   margin:6px 15px 0;font-size:12.5px;color:var(--sub);line-height:1.85;letter-spacing:.2px;
 }
 .firsthint .linkbtn{color:var(--accent-ink);font-size:12.5px;font-weight:600;}
+
+/* ===== 存成一页纸（图片分享）===== */
+.share-entry{margin:20px 0 2px;}
+.share-styles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 12px;}
+.share-styles button{
+  padding:9px 4px 8px;border-radius:11px;border:1px solid var(--line);background:var(--card);
+  color:var(--ink-2);font-family:var(--sans);font-size:11.5px;line-height:1.3;text-align:center;
+}
+.share-styles button span{display:block;margin-top:3px;font-size:9.5px;color:var(--sub);}
+.share-styles button.on{border-color:var(--accent);color:var(--ink);box-shadow:0 0 0 1px var(--accent) inset;}
+.share-styles button.on span{color:var(--accent-ink);}
+/* 第五个风格：自定义背景，独占一行 */
+.share-styles button.wide{
+  grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:9px 10px;font-size:11.5px;
+}
+.share-styles button.wide span{display:inline;margin:0;font-size:9.5px;}
+.share-bgbar{
+  display:flex;align-items:center;flex-wrap:wrap;gap:4px 14px;margin:-2px 2px 12px;
+  font-size:12px;color:var(--sub);line-height:1.7;
+}
+.share-bgbar:empty{display:none;}
+.share-bgbar .linkbtn{font-size:12px;color:var(--accent-ink);}
+.share-pv{border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--paper);}
+.share-pv img{display:block;width:100%;height:auto;}
+.share-note{margin:10px 2px 0;font-size:12px;color:var(--sub);line-height:1.7;}
+.share-cta{margin-top:12px;}
 .wfoot{
   position:fixed;bottom:calc(66px + var(--sab) + var(--kb,0px));left:50%;transform:translateX(-50%);
   width:100%;max-width:480px;z-index:7;
@@ -922,6 +952,7 @@ html.kb-on .wfoot{bottom:var(--kb,0px);}
 </div>
 
 <input type="file" id="wpfile" class="filehide" accept="image/*">
+<input type="file" id="sharebgfile" class="filehide" accept="image/*">
 <input type="file" id="impfile" class="filehide" accept="application/json,.json,text/plain">
 
 <nav class="tabbar" id="tabbar">
@@ -974,6 +1005,7 @@ var fmtCN = function(k){
   return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 周'+WD[d.getDay()];
 };
 var fmtYM = function(k){ var d=parseKey(k); return d.getMonth()+1+'月'+d.getDate()+'日'; };
+var shortDate = function(k){ var d=parseKey(k); return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日'; };
 var wc = function(s){ return (String(s||'')).replace(/\s+/g,'').length; };
 var hhmm = function(iso){
   if(!iso) return '';
@@ -11335,6 +11367,8 @@ function load(){
         settings: {
           skin: sk,
           fs: (old.fs === 's' || old.fs === 'l') ? old.fs : 'm',
+          /* font: 'skin' = 用皮肤自带字族（默认），'system' = 跟随系统字体 */
+          font: (old.font === 'system') ? 'system' : 'skin',
           exportedAt: (typeof old.exportedAt === 'string') ? old.exportedAt : null,
           /* wallv: 0 = 最模糊/最淡，100 = 最清晰（旧版 wall 0/1/2 不再使用） */
           wallv: (typeof old.wallv === 'number')
@@ -11344,7 +11378,7 @@ function load(){
       };
     }
   }catch(e){ /* 损坏数据则重置 */ }
-  return { questions: BLANK_Q(), entries: {}, settings: { skin:'paper', fs:'m', wallv:42 } };
+  return { questions: BLANK_Q(), entries: {}, settings: { skin:'paper', fs:'m', font:'skin', wallv:42 } };
 }
 /* 壁纸单独存（体积大，不跟日记数据混在一起） */
 var WPKEY = 'writing-diary:wallpaper';
@@ -11371,6 +11405,18 @@ function setFs(v){
   S.settings.fs = v;
   persist();
   applyFs();
+  refreshSettings();
+}
+/* 正文字体：'skin' 用皮肤自带字族，'system' 用系统默认字体；只换字族，字号行高不动 */
+function applyFont(){
+  document.documentElement.setAttribute('data-font', S.settings.font === 'system' ? 'system' : 'skin');
+}
+function setFont(v){
+  if(v !== 'skin' && v !== 'system') return;
+  if(S.settings.font === v) return;
+  S.settings.font = v;
+  persist();
+  applyFont();
   refreshSettings();
 }
 /* 安卓外壳：状态栏图标明暗跟随当前皮肤（深色皮肤 → 浅色图标） */
@@ -11861,6 +11907,10 @@ function closeLayer(){
     if(my !== layerToken) return;      // 期间已打开新浮层，不要清空它
     layer.hidden = true;
     layer.innerHTML = '';
+    if(shareBack){                     // 从详情页进来的分享浮层：关掉后回到那一篇
+      var bk = shareBack; shareBack = null;
+      openDetail(bk);
+    }
   }, 210);
 }
 
@@ -12051,8 +12101,324 @@ function openDetail(k){
       '<div class="content">'+(wc(e.content) ? esc(e.content) : '<span class="muted">（没有内容）</span>')+'</div>'+
       pastBlock(k)+
       entryNav(k)+
+      '<div class="share-entry"><button class="btn ghost block" data-act="share-open" data-k="'+k+'">存成一页纸</button></div>'+
     '</article>'
   );
+}
+
+/* =========================================================
+   存成一页纸：把一篇日记画成一张 1080 宽的 PNG
+   ========================================================= */
+var SHARE_STYLES = [
+  { k:'paper', n:'日系手账', d:'米纸 · 胶带' },
+  { k:'plain', n:'素白',     d:'纯白 · 细字' },
+  { k:'night', n:'夜墨',     d:'深底 · 暖光' },
+  { k:'press', n:'打字机',   d:'旧纸 · 等宽' },
+  { k:'custom', n:'自定义背景', d:'用我自己的图', wide:true }
+];
+var SHARE_THEME = {
+  paper: { bg:'#F6EFE2', bg2:'#EFE5D2', ink:'#2B2A26', sub:'#7B7367', accent:'#2C5344',
+           line:'rgba(44,83,68,.22)',
+           family:"'Songti SC','Noto Serif SC','Songti SC',serif",
+           titleFamily:"'Songti SC','Noto Serif SC',serif", titleSize:46, base:34 },
+  plain: { bg:'#FFFFFF', bg2:'#FFFFFF', ink:'#17181A', sub:'#8C8C8C', accent:'#17181A',
+           line:'rgba(0,0,0,.14)',
+           family:"-apple-system,'PingFang SC','Microsoft YaHei',sans-serif",
+           titleFamily:"-apple-system,'PingFang SC','Microsoft YaHei',sans-serif", titleSize:40, base:32 },
+  night: { bg:'#1B1916', bg2:'#12100D', ink:'#EFE6D6', sub:'#A89C88', accent:'#BEE2CE',
+           line:'rgba(190,226,206,.22)',
+           family:"'Songti SC','Noto Serif SC',serif",
+           titleFamily:"'Songti SC','Noto Serif SC',serif", titleSize:44, base:33 },
+  press: { bg:'#EADFC6', bg2:'#E2D5B7', ink:'#2E4534', sub:'#6E7B62', accent:'#2E4534',
+           line:'rgba(46,69,52,.32)',
+           family:"ui-monospace,'SFMono-Regular',Consolas,'Courier New',monospace",
+           titleFamily:"ui-monospace,'SFMono-Regular',Consolas,'Courier New',monospace", titleSize:38, base:30 },
+  /* 自定义背景：图上罩一层米白，保证任何照片下正文都读得清 */
+  custom: { bg:'#F2ECE0', bg2:'#EDE4D4', ink:'#1F1C17', sub:'#5F574B', accent:'#2C5344',
+           line:'rgba(44,83,68,.28)', scrim:'rgba(250,246,238,.58)',
+           family:"'Songti SC','Noto Serif SC',serif",
+           titleFamily:"'Songti SC','Noto Serif SC',serif", titleSize:44, base:33 }
+};
+var SHARE_FROM_SKIN = { paper:'paper', cozy:'night', focus:'plain', press:'press', cute:'paper', tech:'night' };
+var shareKey = null, shareStyle = 'paper', shareBack = null;
+
+/* 自定义背景图：单独存一个键，不跟壁纸和日记混在一起 */
+var SHAREBGKEY = 'writing-diary:sharebg';
+var SHAREBG = '';
+try{ SHAREBG = localStorage.getItem(SHAREBGKEY) || ''; }catch(e){ SHAREBG = ''; }
+var shareBgImg = null;
+function loadShareBg(){
+  shareBgImg = null;
+  if(!SHAREBG) return;
+  var im = new Image();
+  im.onload = function(){ shareBgImg = im; refreshSharePreview(); };
+  im.onerror = function(){
+    /* 存着的图坏了（或格式不支持）：清掉，别让卡片一直退回纯色 */
+    SHAREBG = ''; shareBgImg = null;
+    try{ localStorage.removeItem(SHAREBGKEY); }catch(e){}
+    refreshSharePreview();
+  };
+  im.src = SHAREBG;
+}
+function setShareBg(dataUrl){
+  try{ localStorage.setItem(SHAREBGKEY, dataUrl); }
+  catch(err){ toast('图片太大，浏览器存不下，换一张小一点的'); return false; }
+  SHAREBG = dataUrl;
+  loadShareBg();
+  return true;
+}
+function clearShareBg(){
+  try{ localStorage.removeItem(SHAREBGKEY); }catch(e){}
+  SHAREBG = ''; shareBgImg = null;
+  refreshSharePreview();
+  toast('已去掉背景图');
+}
+
+function shareWrap(ctx, text, maxW){
+  var out = [], paras = String(text||'').split('\n');
+  paras.forEach(function(p){
+    if(!p){ out.push(''); return; }
+    var line = '';
+    for(var i=0;i<p.length;i++){
+      var ch = p.charAt(i);
+      /* emoji 是代理对，拆开就成了两个乱码方块——成对处理 */
+      var code = p.charCodeAt(i);
+      if(code >= 0xD800 && code <= 0xDBFF && i+1 < p.length){
+        ch += p.charAt(i+1); i++;
+      }
+      if(ctx.measureText(line+ch).width > maxW && line){ out.push(line); line = ch; }
+      else line += ch;
+    }
+    out.push(line);
+  });
+  return out;
+}
+
+function buildShareCanvas(k, style){
+  var e = getEntry(k);
+  if(!e) return null;
+  var st = SHARE_THEME[style] || SHARE_THEME.paper;
+  var W = 1080, PAD = 88, CW = W - PAD*2, MAXH = 3200;
+  var text = String(e.content || '').replace(/\r/g,'');
+  var cv = document.createElement('canvas'), ctx = cv.getContext('2d');
+  var fs = st.base, LH = 1.95, lines = [], H = 0;
+  var head = st.titleSize + 26 + 30 + 40;   /* 标题 + 元信息 + 分隔 */
+
+  for(;;){
+    ctx.font = fs + 'px ' + st.family;
+    lines = shareWrap(ctx, text, CW);
+    H = PAD + head + lines.length*fs*LH + 96 + PAD;
+    if(H <= MAXH || fs <= 23) break;
+    fs -= 2;
+  }
+  if(H > MAXH){
+    var avail = MAXH - (PAD + head + 96 + PAD);
+    var maxLines = Math.max(1, Math.floor(avail / (fs*LH)));
+    if(lines.length > maxLines){
+      lines = lines.slice(0, maxLines);
+      lines[maxLines-1] = lines[maxLines-1].replace(/.$/, '') + '……';
+    }
+    H = PAD + head + lines.length*fs*LH + 96 + PAD;
+  }
+
+  cv.width = W; cv.height = Math.round(H);
+  ctx = cv.getContext('2d');
+  ctx.textBaseline = 'top';
+
+  if(style === 'custom' && shareBgImg){
+    /* 自己的图：等比铺满（cover），再罩一层米白，保证任何照片下正文都读得清 */
+    var iw = shareBgImg.width, ih = shareBgImg.height;
+    var sc = Math.max(W / iw, cv.height / ih);
+    var dw = iw * sc, dh = ih * sc;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, 0, W, cv.height); ctx.clip();
+    ctx.drawImage(shareBgImg, (W - dw) / 2, (cv.height - dh) / 2, dw, dh);
+    ctx.restore();
+    ctx.fillStyle = st.scrim || 'rgba(247,242,233,.84)';
+    ctx.fillRect(0, 0, W, cv.height);
+  } else if(st.bg !== st.bg2){
+    var g = ctx.createLinearGradient(0, 0, 0, cv.height);
+    g.addColorStop(0, st.bg); g.addColorStop(1, st.bg2);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, cv.height);
+  } else {
+    ctx.fillStyle = st.bg;
+    ctx.fillRect(0, 0, W, cv.height);
+  }
+
+  if(style === 'paper'){
+    ctx.save(); ctx.translate(PAD + 6, PAD - 40); ctx.rotate(-0.045);
+    ctx.fillStyle = 'rgba(198,178,142,.5)'; ctx.fillRect(0, 0, 300, 52);
+    ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(0, 15, 300, 3);
+    ctx.fillRect(0, 32, 300, 2);
+    ctx.restore();
+  } else if(style === 'night'){
+    var rg = ctx.createRadialGradient(W*0.78, 120, 10, W*0.78, 120, 540);
+    rg.addColorStop(0, 'rgba(190,226,206,.10)'); rg.addColorStop(1, 'rgba(190,226,206,0)');
+    ctx.fillStyle = rg; ctx.fillRect(0, 0, W, 660);
+  } else if(style === 'press'){
+    ctx.strokeStyle = st.accent; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(PAD, PAD - 42); ctx.lineTo(W - PAD, PAD - 42); ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD, PAD - 32); ctx.lineTo(W - PAD, PAD - 32); ctx.stroke();
+  }
+
+  var y = PAD;
+  ctx.fillStyle = st.ink;
+  ctx.font = '600 ' + st.titleSize + 'px ' + st.titleFamily;
+  ctx.fillText(fmtCN(k), PAD, y);
+  y += st.titleSize + 26;
+
+  ctx.fillStyle = st.sub;
+  ctx.font = '24px ' + st.family;
+  ctx.fillText(wc(text) + ' 字' + (e.status === 'locked' ? ' · 已锁定' : ' · 草稿'), PAD, y);
+  y += 30;
+
+  ctx.strokeStyle = st.line; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(PAD, y + 6); ctx.lineTo(W - PAD, y + 6); ctx.stroke();
+  y += 40;
+
+  ctx.fillStyle = st.ink;
+  ctx.font = fs + 'px ' + st.family;
+  for(var i=0;i<lines.length;i++){
+    ctx.fillText(lines[i], PAD, y);
+    y += fs * LH;
+  }
+
+  ctx.fillStyle = st.sub;
+  ctx.font = '22px ' + st.family;
+  ctx.fillText('小鲸鱼 · 写作日记', PAD, cv.height - PAD - 24);
+  var dk = k.replace(/-/g, '.');
+  ctx.textAlign = 'right';
+  ctx.fillText(dk, W - PAD, cv.height - PAD - 24);
+  ctx.textAlign = 'left';
+  return cv;
+}
+
+function shareImageUrl(k, style){
+  var cv = buildShareCanvas(k, style);
+  return cv ? cv.toDataURL('image/png') : '';
+}
+
+function shareBgBar(){
+  if(shareStyle !== 'custom') return '';
+  return SHAREBG
+    ? '背景已选 · <button class="linkbtn" data-act="share-bg-pick">换一张</button>'+
+      '<button class="linkbtn" data-act="share-bg-clear">去掉</button>'
+    : '<button class="linkbtn" data-act="share-bg-pick">选一张图片当背景</button>';
+}
+function shareBody(){
+  if(shareKey === null) return '';
+  var chips = SHARE_STYLES.map(function(s){
+    return '<button class="'+(s.k===shareStyle?'on':'')+(s.wide?' wide':'')+'" data-act="share-style" data-k="'+s.k+'"'+
+      ' aria-pressed="'+(s.k===shareStyle?'true':'false')+'">'+
+      s.n+'<span>'+s.d+'</span></button>';
+  }).join('');
+  return '<div class="sheet-hd"><b>存成一页纸</b><button class="donebtn" data-act="close">完成</button></div>'+
+    '<div class="share-styles" role="group" aria-label="图片风格">'+chips+'</div>'+
+    '<div class="share-bgbar" id="sharebgbar">'+shareBgBar()+'</div>'+
+    '<div class="share-pv"><img id="shareimg" alt="日记图片预览" src="'+shareImageUrl(shareKey, shareStyle)+'"></div>'+
+    '<p class="share-note">点「保存图片」下载；手机上也可以长按这张图存进相册。</p>'+
+    '<div class="share-cta"><button class="btn primary block" data-act="share-save">保存图片</button></div>';
+}
+
+function openShare(k){
+  if(!getEntry(k)) return;
+  shareKey = k;
+  shareStyle = SHARE_FROM_SKIN[S.settings.skin] || 'paper';
+  openSheet(shareBody());
+  shareBack = k;
+}
+
+function refreshSharePreview(){
+  var img = document.getElementById('shareimg');
+  if(!img || shareKey === null) return;
+  img.src = shareImageUrl(shareKey, shareStyle);
+  var bar = document.getElementById('sharebgbar');
+  if(bar) bar.innerHTML = shareBgBar();
+  Array.prototype.forEach.call(document.querySelectorAll('.share-styles button'), function(b){
+    var on = b.dataset.k === shareStyle;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
+function pickShareBg(){
+  var inp = $('#sharebgfile');
+  if(!inp) return;
+  inp.value = '';
+  inp.click();
+}
+/* 选图 → 等比缩到 1400px → JPEG .82 → 存到单独的键 */
+function onShareBgFile(ev){
+  var f = ev.target.files && ev.target.files[0];
+  if(!f) return;
+  if(!/^image\//.test(f.type)){ toast('请选择图片文件'); return; }
+  if(f.size > 20*1024*1024){ toast('图片超过 20MB，换一张小一点的'); return; }
+  toast('正在处理图片…');
+  var fr = new FileReader();
+  fr.onload = function(){
+    var img = new Image();
+    img.onload = function(){
+      var MAX = 1400;
+      var sc = Math.min(1, MAX / Math.max(img.width, img.height));
+      var w = Math.max(1, Math.round(img.width * sc));
+      var h = Math.max(1, Math.round(img.height * sc));
+      var cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      var cx = cv.getContext('2d');
+      cx.fillStyle = '#ffffff'; cx.fillRect(0, 0, w, h);
+      cx.drawImage(img, 0, 0, w, h);
+      var data;
+      try{ data = cv.toDataURL('image/jpeg', .82); }
+      catch(e){ toast('图片处理失败，换一张试试'); return; }
+      if(setShareBg(data)){
+        shareStyle = 'custom';
+        refreshSharePreview();
+        toast('背景已设为这张图');
+      }
+    };
+    img.onerror = function(){ toast('图片读取失败，换一张试试'); };
+    img.src = fr.result;
+  };
+  fr.onerror = function(){ toast('图片读取失败，换一张试试'); };
+  fr.readAsDataURL(f);
+}
+
+function setShareStyle(k){
+  if(shareKey === null || !SHARE_THEME[k]) return;
+  shareStyle = k;
+  refreshSharePreview();
+  if(k === 'custom' && !SHAREBG) pickShareBg();
+}
+
+function saveShare(){
+  if(shareKey === null) return;
+  /* 背景图还没解码完就保存，会得到一张没有照片的卡片——等一下再存 */
+  if(shareStyle === 'custom' && SHAREBG && !shareBgImg){ toast('背景图还在载入，稍等一下再保存'); return; }
+  var cv = buildShareCanvas(shareKey, shareStyle);
+  if(!cv){ toast('生成失败'); return; }
+  var data;
+  try{ data = cv.toDataURL('image/png'); }catch(err){ toast('生成失败'); return; }
+  var stName = '日系手账';
+  SHARE_STYLES.forEach(function(s){ if(s.k === shareStyle) stName = s.n; });
+  var name = '小鲸鱼-' + shareKey + '-' + stName + '.png';
+  if(window.AndroidHost && typeof window.AndroidHost.saveFileBinary === 'function'){
+    try{ window.AndroidHost.saveFileBinary(name, 'image/png', data.split(',')[1]); }
+    catch(err){ toast('保存失败'); }
+    return;
+  }
+  if(window.AndroidHost){ toast('请长按图片保存到相册'); return; }
+  try{
+    var bin = atob(data.split(',')[1]), arr = new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++) arr[i] = bin.charCodeAt(i);
+    var blob = new Blob([arr], {type:'image/png'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+    toast('已保存图片');
+  }catch(err){ toast('保存失败'); }
 }
 
 /* ---- 设置 ---- */
@@ -12070,6 +12436,17 @@ function skinTiles(){
   }).join('');
 }
 var FS_NAME = { s:'小', m:'中', l:'大' };
+var FONT_NAME = { skin:'跟随皮肤', system:'跟随系统' };
+function fontRow(){
+  var cur = S.settings.font === 'system' ? 'system' : 'skin';
+  var btns = ['skin','system'].map(function(v){
+    return '<button class="'+(cur===v?'on':'')+'" data-act="set-font" data-v="'+v+'">'+FONT_NAME[v]+'</button>';
+  }).join('');
+  return '<div class="setrow col">'+
+    '<div class="sr-top"><b>正文字体</b><span class="sub">'+FONT_NAME[cur]+' · 只影响正文</span></div>'+
+    '<div class="seg inrow">'+btns+'</div>'+
+  '</div>';
+}
 function fsRow(){
   var cur = S.settings.fs || 'm';
   var btns = ['s','m','l'].map(function(v){
@@ -12106,6 +12483,7 @@ function settingsBody(){
         '<div class="sr-top"><b>界面风格</b><span class="sub">'+cur.n+'</span></div>'+
         '<div class="skins">'+skinTiles()+'</div>'+
       '</div>'+
+      fontRow()+
       fsRow()+
       '<button class="setrow" data-act="pick-wallpaper">'+
         '<span>自定义壁纸<span class="sub">'+(WPS?'已设置 · 点此更换':'从本机选一张图片')+'</span></span>'+
@@ -12151,7 +12529,7 @@ function refreshSettings(){
 }
 function openAbout(){
   openSheet(
-    '<div class="sheet-hd"><b>关于</b><span class="cnt">v0.9.2 · 网页 / 安卓</span></div>'+
+    '<div class="sheet-hd"><b>关于</b><span class="cnt">v0.9.6 · 网页 / 安卓</span></div>'+
     '<p class="sheet-p">小鲸鱼 · 本地单机写作日记。九宫格问题提示写作，每天一篇，手动提交后锁定只读。</p>'+
     '<div class="setlist">'+
       '<div class="setrow"><span>数据存放<span class="sub">浏览器 localStorage</span></span><span class="muted">本机</span></div>'+
@@ -12488,10 +12866,18 @@ document.addEventListener('click', function(ev){
       break;
     }
 
+    /* --- 存成一页纸 --- */
+    case 'share-open': openShare(t.dataset.k); break;
+    case 'share-style': setShareStyle(t.dataset.k); break;
+    case 'share-bg-pick': pickShareBg(); break;
+    case 'share-bg-clear': clearShareBg(); break;
+    case 'share-save': saveShare(); break;
+
     /* --- 设置 --- */
     case 'settings':      openSettings(); break;
     case 'skin': setSkin(t.dataset.k); break;
     case 'set-fs': setFs(t.dataset.v); break;
+    case 'set-font': setFont(t.dataset.v); break;
     case 'pick-wallpaper': pickWallpaper(); break;
     case 'clear-wallpaper':
       clearWallpaper();
@@ -12570,10 +12956,14 @@ document.addEventListener('keydown', function(ev){
    ========================================================= */
 applySkin();
 applyFs();
+applyFont();
 var wpInput = $('#wpfile');
 if(wpInput) wpInput.addEventListener('change', onWallpaperFile);
 var impInput = $('#impfile');
 if(impInput) impInput.addEventListener('change', onImportFile);
+var sbInput = $('#sharebgfile');
+if(sbInput) sbInput.addEventListener('change', onShareBgFile);
+loadShareBg();
 
 var lastDay = todayKey();
 sweepDrafts();

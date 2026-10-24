@@ -27,6 +27,7 @@ import androidx.webkit.WebViewAssetLoader;
 
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import android.util.Base64;
 
 /**
  * 写作日记的安卓外壳。
@@ -51,6 +52,7 @@ public class MainActivity extends Activity {
 
     private String pendingText;
     private String pendingName;
+    private byte[] pendingBytes;
 
     // 上一次发给页面的数值，避免键盘动画每一帧都往 WebView 里塞一次 JS
     private int lastTop = -1, lastBottom = -1, lastKb = -1;
@@ -216,12 +218,15 @@ public class MainActivity extends Activity {
         }
 
         if (req == REQ_SAVE) {
-            if (res == RESULT_OK && data != null && data.getData() != null && pendingText != null) {
-                writeTo(data.getData(), pendingText, pendingName);
+            if (res == RESULT_OK && data != null && data.getData() != null
+                    && (pendingText != null || pendingBytes != null)) {
+                if (pendingBytes != null) writeBytesTo(data.getData(), pendingBytes, pendingName);
+                else writeTo(data.getData(), pendingText, pendingName);
             } else {
                 toast("已取消保存");
             }
             pendingText = null;
+            pendingBytes = null;
             pendingName = null;
             return;
         }
@@ -233,6 +238,18 @@ public class MainActivity extends Activity {
         try (OutputStream os = getContentResolver().openOutputStream(uri)) {
             if (os == null) throw new IllegalStateException("openOutputStream returned null");
             os.write(text.getBytes(StandardCharsets.UTF_8));
+            os.flush();
+            toast(name == null ? "已保存" : "已保存：" + name);
+        } catch (Exception e) {
+            toast("保存失败，换一个位置再试");
+        }
+    }
+
+    /** 图片这类二进制走这里：页面给 base64，原生解码后按字节写 */
+    private void writeBytesTo(Uri uri, byte[] bytes, String name) {
+        try (OutputStream os = getContentResolver().openOutputStream(uri)) {
+            if (os == null) throw new IllegalStateException("openOutputStream returned null");
+            os.write(bytes);
             os.flush();
             toast(name == null ? "已保存" : "已保存：" + name);
         } catch (Exception e) {
@@ -260,6 +277,7 @@ public class MainActivity extends Activity {
         public void saveFile(final String name, final String mime, final String text) {
             pendingName = name;
             pendingText = text;
+            pendingBytes = null;
             runOnUiThread(new Runnable() {
                 @Override public void run() {
                     Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
@@ -271,6 +289,37 @@ public class MainActivity extends Activity {
                         startActivityForResult(i, REQ_SAVE);
                     } catch (Exception e) {
                         pendingText = null;
+                        pendingName = null;
+                        toast("打不开保存对话框");
+                    }
+                }
+            });
+        }
+
+        /** 图片分享用：base64 → 字节，其余流程和 saveFile 一样 */
+        @JavascriptInterface
+        public void saveFileBinary(final String name, final String mime, final String base64) {
+            final byte[] bytes;
+            try {
+                bytes = Base64.decode(base64, Base64.DEFAULT);
+            } catch (Exception e) {
+                toast("图片太大，保存失败");
+                return;
+            }
+            pendingName = name;
+            pendingText = null;
+            pendingBytes = bytes;
+            runOnUiThread(new Runnable() {
+                @Override public void run() {
+                    Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    String type = (mime == null || mime.isEmpty()) ? "image/png" : mime.split(";")[0];
+                    i.setType(type);
+                    if (name != null) i.putExtra(Intent.EXTRA_TITLE, name);
+                    try {
+                        startActivityForResult(i, REQ_SAVE);
+                    } catch (Exception e) {
+                        pendingBytes = null;
                         pendingName = null;
                         toast("打不开保存对话框");
                     }
