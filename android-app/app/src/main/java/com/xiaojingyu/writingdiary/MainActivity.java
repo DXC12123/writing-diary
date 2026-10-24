@@ -3,9 +3,12 @@ package com.xiaojingyu.writingdiary;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -16,6 +19,10 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import androidx.core.graphics.Insets;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.webkit.WebViewAssetLoader;
 
 import java.io.OutputStream;
@@ -45,6 +52,9 @@ public class MainActivity extends Activity {
     private String pendingText;
     private String pendingName;
 
+    // 上一次发给页面的数值，避免键盘动画每一帧都往 WebView 里塞一次 JS
+    private int lastTop = -1, lastBottom = -1, lastKb = -1;
+
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle state) {
@@ -54,6 +64,31 @@ public class MainActivity extends Activity {
         web.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         setContentView(web);
+
+        // 页面铺到状态栏 / 导航栏后面，颜色交给网页自己画（换皮肤时整屏跟着变）
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        getWindow().setStatusBarColor(Color.TRANSPARENT);
+        getWindow().setNavigationBarColor(Color.TRANSPARENT);
+        if (android.os.Build.VERSION.SDK_INT >= 29) {
+            getWindow().setStatusBarContrastEnforced(false);
+            getWindow().setNavigationBarContrastEnforced(false);
+        }
+
+        // 把原生安全区高度告诉页面：页面里用 --sat / --sab 决定头尾留白，
+        // 用 --kb 让出输入法高度（键盘弹起时整屏上缩，光标不会被挡住）
+        web.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+            @Override
+            public WindowInsets onApplyWindowInsets(View v, WindowInsets wi) {
+                WindowInsetsCompat c = WindowInsetsCompat.toWindowInsetsCompat(wi, v);
+                Insets bars = c.getInsets(WindowInsetsCompat.Type.systemBars()
+                        | WindowInsetsCompat.Type.displayCutout());
+                Insets ime = c.getInsets(WindowInsetsCompat.Type.ime());
+                float d = getResources().getDisplayMetrics().density;
+                sendSafeArea(Math.round(bars.top / d), Math.round(bars.bottom / d),
+                        Math.round(ime.bottom / d));
+                return wi;
+            }
+        });
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -87,6 +122,13 @@ public class MainActivity extends Activity {
                 }
                 return true;
             }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                // 页面刚起来时 setSafeArea 可能还没定义，这里清掉缓存再补发一次
+                lastTop = lastBottom = lastKb = -1;
+                view.requestApplyInsets();
+            }
         });
 
         web.addJavascriptInterface(new HostBridge(), "AndroidHost");
@@ -112,6 +154,35 @@ public class MainActivity extends Activity {
         });
 
         web.loadUrl(START_URL);
+    }
+
+    /** 把安全区高度（dp）写进页面的 CSS 变量：top / bottom 是状态栏与导航栏，kb 是输入法。
+     *  页面加载完再补一次（onPageFinished 里清缓存重发），防止首帧漏掉 */
+    private void sendSafeArea(int topDp, int bottomDp, int kbDp) {
+        if (web == null) return;
+        if (topDp == lastTop && bottomDp == lastBottom && kbDp == lastKb) return;
+        lastTop = topDp;
+        lastBottom = bottomDp;
+        lastKb = kbDp;
+        final String js = "window.setSafeArea && window.setSafeArea("
+                + topDp + "," + bottomDp + "," + kbDp + ")";
+        web.post(new Runnable() {
+            @Override public void run() {
+                web.evaluateJavascript(js, null);
+            }
+        });
+    }
+
+    /** 深色皮肤要浅色图标，浅色皮肤要深色图标 */
+    private void applyStatusBarIcons(final boolean darkTheme) {
+        runOnUiThread(new Runnable() {
+            @Override public void run() {
+                WindowInsetsControllerCompat c =
+                        WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+                c.setAppearanceLightStatusBars(!darkTheme);
+                c.setAppearanceLightNavigationBars(!darkTheme);
+            }
+        });
     }
 
     /** accept 里既有 "application/json" 也有 ".json"，只取能当 MIME 用的那个 */
@@ -179,6 +250,12 @@ public class MainActivity extends Activity {
 
     /** 给页面调的原生能力；页面会先判断 window.AndroidHost 是否存在，网页版不受影响 */
     private class HostBridge {
+        /** 页面换皮肤时调这个：darkTheme=true 表示深色底，状态栏图标用浅色 */
+        @JavascriptInterface
+        public void setStatusBarIcons(final boolean darkTheme) {
+            applyStatusBarIcons(darkTheme);
+        }
+
         @JavascriptInterface
         public void saveFile(final String name, final String mime, final String text) {
             pendingName = name;

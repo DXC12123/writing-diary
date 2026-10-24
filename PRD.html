@@ -1,0 +1,885 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>小鲸鱼 · 产品需求文档 v0.9.2</title>
+<style>
+:root{
+  --paper:#F7F3EC; --card:#FFFDF8; --ink:#1F1D1A; --ink-2:#5E574E;
+  --sub:#6F6658; --line:#E4DCCD; --accent:#3A6B58; --accent-soft:#E8F0EA;
+  --rust:#B4552E; --rust-soft:#FBEDE6; --fill:#FBF7EF; --ui:#EFE7D8;
+  --serif:"Songti SC","Noto Serif SC","Source Han Serif SC",Georgia,serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font:400 15px/1.75 -apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{display:flex;max-width:1060px;margin:0 auto;align-items:flex-start;}
+
+/* ===== 左侧目录 ===== */
+.toc{
+  width:210px;flex:none;position:sticky;top:0;height:100vh;overflow-y:auto;
+  padding:44px 14px 40px 22px;border-right:1px solid var(--line);font-size:12.5px;
+}
+.toc p{margin:0 0 12px;font-size:11px;letter-spacing:1px;color:var(--sub);}
+.toc a{display:block;color:var(--sub);text-decoration:none;padding:3.5px 0;line-height:1.5;}
+.toc a:hover{color:var(--accent);}
+.toc .sub{padding-left:12px;font-size:12px;}
+
+/* ===== 正文 ===== */
+.doc{flex:1;min-width:0;max-width:720px;margin:0 auto;padding:52px 42px 140px;}
+
+.cover{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:8px;}
+.kicker{font-size:11.5px;letter-spacing:2px;color:var(--accent);font-weight:600;margin:0 0 12px;}
+h1{font-size:31px;line-height:1.3;margin:0 0 10px;letter-spacing:.6px;font-weight:600;}
+.cover .sub{margin:0 0 22px;font-size:14.5px;color:var(--sub);}
+
+h2{font-size:20px;margin:46px 0 14px;padding-top:6px;letter-spacing:.4px;font-weight:600;}
+h2,.req{scroll-margin-top:28px;}
+h2 .n{font-family:var(--mono);font-size:12px;color:var(--accent);margin-right:9px;letter-spacing:0;vertical-align:2px;}
+h3{font-size:15.5px;margin:26px 0 8px;font-weight:600;}
+h4{font-size:14px;margin:0 0 8px;font-weight:600;}
+p{margin:0 0 12px;color:var(--ink-2);font-size:14px;}
+ul,ol{margin:0 0 14px;padding-left:20px;color:var(--ink-2);font-size:14px;}
+li{margin:4px 0;}
+li>strong,p>strong,td>strong{color:var(--ink);}
+a{color:var(--accent);}
+.lead{font-size:15.5px;color:var(--ink);line-height:1.8;}
+
+table{width:100%;border-collapse:collapse;margin:10px 0 20px;font-size:13px;}
+th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top;color:var(--ink-2);}
+th{background:var(--fill);font-weight:600;color:var(--ink);white-space:nowrap;}
+td code,th code{white-space:nowrap;}
+code{font-family:var(--mono);font-size:12.2px;background:#F1EBDD;padding:1px 5px;border-radius:4px;color:#4C463C;}
+pre{margin:10px 0 20px;background:var(--fill);border:1px solid var(--line);border-radius:10px;
+  padding:14px 16px;overflow-x:auto;font-size:12.2px;line-height:1.72;}
+pre code{background:none;padding:0;color:#4C463C;}
+
+table.hist td:first-child,table.hist td:nth-child(2){white-space:nowrap;}
+
+.req{border:1px solid var(--line);border-radius:12px;padding:15px 17px 6px;margin:14px 0;background:var(--card);}
+.req h4{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.req p,.req li{font-size:13.5px;}
+.req table{font-size:12.5px;margin-bottom:12px;}
+.id{font-family:var(--mono);font-size:11.5px;background:var(--accent-soft);color:var(--accent);
+  padding:2px 7px;border-radius:5px;font-weight:600;letter-spacing:.3px;}
+.tag{font-size:11px;padding:2px 7px;border-radius:5px;background:var(--ui);color:#6B5D45;font-weight:500;}
+.tag.done{background:var(--accent-soft);color:var(--accent);}
+.tag.later{background:#EDE4D2;color:#6A5C44;}
+.tag.out{background:#EFE7D8;color:#6E6553;}
+
+.callout{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:16px 0;font-size:13.5px;color:var(--sub);}
+.callout.warn{border-left-color:var(--rust);background:transparent;}
+.rule{border:0;border-top:1px solid var(--line);margin:34px 0 0;}
+
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0 20px;font-size:12.5px;}
+.node{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 11px;color:var(--ink);}
+.node.a{border-color:#BFD8C9;background:var(--accent-soft);color:var(--accent);font-weight:600;}
+.node.z{border-style:dashed;color:var(--sub);}
+.arrow{color:var(--sub);font-family:var(--mono);}
+
+.kpi{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0 20px;}
+.kpi div{flex:1 1 180px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--card);}
+.kpi b{display:block;font-size:19px;letter-spacing:.5px;margin-bottom:2px;}
+.kpi span{font-size:12px;color:var(--sub);}
+
+.foot{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);font-size:12.5px;color:var(--sub);}
+
+@media (max-width:900px){
+  .wrap{display:block;}
+  .toc{position:static;width:auto;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:20px 22px;}
+  .toc .sub{display:none;}
+  .toc a{display:inline-block;margin-right:14px;}
+  .doc{padding:30px 22px 90px;}
+  h1{font-size:25px;}
+  h2{margin-top:34px;}
+}
+@media print{
+  body{background:#fff;}
+  .toc{display:none;}
+  .doc{max-width:none;padding:0;}
+  .req,table,pre,.kpi div{break-inside:avoid;}
+  a{color:inherit;text-decoration:none;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<aside class="toc">
+  <p>目录</p>
+  <a href="#s0">文档信息</a>
+  <a href="#s1">1 · 产品概述</a>
+  <a href="#s2">2 · 范围与版本</a>
+  <a href="#s3">3 · 核心概念与数据</a>
+  <a href="#s4">4 · 功能需求</a>
+  <a class="sub" href="#fr01">FR-01 九宫格问题板</a>
+  <a class="sub" href="#fr02">FR-02 写日记</a>
+  <a class="sub" href="#fr03">FR-03 写作时看提示</a>
+  <a class="sub" href="#fr04">FR-04 提交锁定</a>
+  <a class="sub" href="#fr05">FR-05 跨天自动锁定</a>
+  <a class="sub" href="#fr06">FR-06 回顾 · 日</a>
+  <a class="sub" href="#fr07">FR-07 回顾 · 月</a>
+  <a class="sub" href="#fr08">FR-08 回顾 · 年</a>
+  <a class="sub" href="#fr09">FR-09 只读详情</a>
+  <a class="sub" href="#fr10">FR-10 设置与导出</a>
+  <a class="sub" href="#fr11">FR-11 界面风格（6 套皮肤）</a>
+  <a class="sub" href="#fr12">FR-12 自定义壁纸</a>
+  <a class="sub" href="#fr13">FR-13 写作小贴士</a>
+  <a class="sub" href="#fr14">FR-14 从 JSON 导入</a>
+  <a class="sub" href="#fr15">FR-15 随机问题（问题库）</a>
+  <a class="sub" href="#fr16">FR-16 正文字号</a>
+  <a class="sub" href="#fr17">FR-17 回看的连贯性</a>
+  <a href="#s5">5 · 交互与视觉规范</a>
+  <a href="#s6">6 · 非功能需求</a>
+  <a href="#s7">7 · 验收清单</a>
+  <a href="#s8">8 · 限制与风险</a>
+  <a href="#s9">9 · 版本记录</a>
+  <a href="#s10">附录</a>
+</aside>
+
+<main class="doc">
+
+<!-- ================= 封面 ================= -->
+<header class="cover">
+  <p class="kicker">PRODUCT REQUIREMENTS DOCUMENT</p>
+  <h1>写作日记 · 产品需求文档</h1>
+  <p class="sub">一个只有九宫格、一天一篇、写完结不修改的本机日记本</p>
+</header>
+
+<h2 id="s0"><span class="n">00</span>文档信息</h2>
+
+<table>
+  <tr><th>项目</th><td>写作日记（个人写作日记）</td></tr>
+  <tr><th>文档版本</th><td>v0.9.2</td></tr>
+  <tr><th>文档状态</th><td><span class="tag done">已实现</span> 按当前代码实况反向编写（as-built），非设想稿</td></tr>
+  <tr><th>更新日期</th><td>2026-10-23</td></tr>
+  <tr><th>对应实现</th><td><code>index.html</code>（单文件，零依赖）· 版本标签 v0.9.2；安卓外壳在 <code>android-app/</code>，由 <code>.github/workflows/android.yml</code> 云端出包</td></tr>
+  <tr><th>适用范围</th><td>网页版（手机浏览器优先，桌面浏览器可用）；本地单机，无服务端</td></tr>
+  <tr><th>读者</th><td>产品 / 开发 / 设计 / 测试；也用于后续迭代时确认「已经做了什么、为什么这么做」</td></tr>
+  <tr><th>状态标签约定</th><td><span class="tag done">已实现</span> 当前版本可用　<span class="tag later">后续</span> 未排期　<span class="tag out">不做</span> 明确排除</td></tr>
+</table>
+
+<div class="callout">
+  本文档与常见 PRD 的差别：需求都写「现在实际是什么样」并带可核对的具体数值（毫秒、像素、色值、存储键），而不是「建议做成什么样」。凡标注「已实现」的条目，均可在 <code>index.html</code> 中找到对应实现。
+</div>
+
+<!-- ================= 1 概述 ================= -->
+<h2 id="s1"><span class="n">01</span>产品概述</h2>
+
+<h3>1.1 一句话</h3>
+<p class="lead">给「想每天写点东西，但一打开空白页就不知道写什么、写完又总想改」的人，一个先给九个问题、写完就封存的本地日记本。</p>
+
+<h3>1.2 背景与问题</h3>
+<p>常见的日记应用解决的是「记录」，但真正让人放弃写日记的是两件事：</p>
+<table>
+  <tr><th>问题</th><th>表现</th><th>本产品的应对</th></tr>
+  <tr><td>空白页焦虑</td><td>打开编辑器，光标闪几下，不知道从哪句开始，关掉。</td><td>九宫格预置写作提示，写作时可随时调出，不必从头想。</td></tr>
+  <tr><td>反复修改</td><td>写完后反复回看、删改，把记录变成了作品，最后干脆不写。</td><td>提交即锁定，永久只读；页面明确告知不可撤销。</td></tr>
+  <tr><td>任务化与焦虑</td><td>连续打卡、字数统计、年度报告把日记变成 KPI。</td><td>不做连续天数、不做提醒红点、不做排行榜；字数只做轻量展示。</td></tr>
+  <tr><td>隐私顾虑</td><td>日记上云、上账号，心理门槛高。</td><td>零账号、零上传，数据只在本机浏览器。</td></tr>
+</table>
+
+<h3>1.3 目标用户与场景</h3>
+<ul>
+  <li><strong>主用户：</strong>有写日记意愿、但缺少「下笔理由」的个人用户，手机为主，一天一次，通常 3–10 分钟。</li>
+  <li><strong>场景 A · 睡前回顾：</strong>躺下后打开，看一眼九个问题，挑一两个顺着写，写完提交，结束。</li>
+  <li><strong>场景 B · 碎片时间：</strong>通勤或午休写一半，没写完也没关系，草稿在本机留着，晚上接着写。</li>
+  <li><strong>场景 C · 回看：</strong>周末翻月历，看哪几天写过、写了多少字，点开某天读一遍。</li>
+</ul>
+
+<h3>1.4 产品原则</h3>
+<table>
+  <tr><th>编号</th><th>原则</th><th>含义与取舍</th></tr>
+  <tr><td>P1</td><td>本地优先</td><td>没有账号、没有服务端、没有网络请求。隐私是默认状态，不是设置项。</td></tr>
+  <tr><td>P2</td><td>少即是好</td><td>只有三个 Tab、一个浮层、一个详情页。任何新功能都要先回答「它会让写日记这件事变重吗」。</td></tr>
+  <tr><td>P3</td><td>写完即封存</td><td>锁定是产品的核心动作，不是保险措施。锁定的仪式感本身在降低「反复修改」的冲动。</td></tr>
+  <tr><td>P4</td><td>不制造焦虑</td><td>不惩罚断更、不制造 streak、不做成就体系。回顾只呈现事实，不评价。</td></tr>
+  <tr><td>P5</td><td>纸的质感</td><td>暖白纸色 + 宋体正文 + 低饱和墨绿；交互轻、动效短，像一个安静的纸本。</td></tr>
+</table>
+
+<h3>1.5 成功指标</h3>
+<div class="kpi">
+  <div><b>≥ 3 天 / 周</b><span>有内容的日记天数（核心）</span></div>
+  <div><b>≥ 60%</b><span>草稿最终被提交锁定（说明「愿意封存」）</span></div>
+  <div><b>9 / 9</b><span>首次使用一周内设置的问题数（说明提示被用上）</span></div>
+</div>
+<p>说明：以上为定性目标；本机应用无埋点，指标通过「导出 JSON 后自查」获得，不做任何自动上报。</p>
+
+<!-- ================= 2 范围 ================= -->
+<h2 id="s2"><span class="n">02</span>范围与版本</h2>
+
+<h3>2.1 v0.1 已交付（写作闭环）</h3>
+<ul>
+  <li>九宫格问题板（编辑 / 删除 / 一键示例 / 单条 50 字）</li>
+  <li>每天一篇写作页，输入即自动存草稿，另有手动「保存草稿」</li>
+  <li>写作中可调出只读提示浮层</li>
+  <li>提交锁定：二次确认、永久只读、不可撤销</li>
+  <li>跨天未提交草稿自动锁定</li>
+  <li>回顾：日 / 月 / 年三视图 + 只读详情</li>
+  <li>导出文本（.txt）与完整备份（.json）</li>
+</ul>
+
+<h3>2.2 v0.2 已交付（外观）</h3>
+<ul>
+  <li>夜间 / 白天模式切换，选择本机记忆（v0.5 起升级为界面风格，v0.6 扩到 6 套，见 FR-11）</li>
+  <li>自定义壁纸：本机选图、自动压缩、浓度可拖拽、可移除</li>
+</ul>
+
+<h3>2.3 v0.3 已交付（结构与语气修补）</h3>
+<ul>
+  <li>锁定后有了出口：写作页页脚出现「去回顾看看」，不再是一条死路</li>
+  <li>写作提示浮层由 3×3 网格改为列表，9 条提示一屏看完、可顺读</li>
+  <li>月视图由 12 张卡片改为列表，只有 1 个有内容的月份时不再 11 张空卡并列</li>
+  <li>回顾日视图在日历下方加入「最近写过」3 条，下半屏不再空</li>
+  <li>问题板空态退为背景（去边框、缩小高度），说明块 + 示例按钮成为唯一焦点</li>
+  <li>切页增加 180ms 淡入；两处未达标的说明文字与日历角标提高对比度</li>
+</ul>
+
+<h3>2.4 v0.4 已交付（写作小贴士）</h3>
+<ul>
+  <li>问题板底部新增「写作小贴士」入口，填满与空态都在</li>
+  <li>9 篇本地内容：写作基础 4 篇 + 技巧提升 5 篇，每篇带一个「试着写一句」</li>
+  <li>目录页 + 正文页 + 上一篇 / 下一篇，全部离线静态文本，不占存储</li>
+</ul>
+
+<h3>2.5 v0.5–v0.6 已交付（界面风格）</h3>
+<ul>
+  <li>设置 → 外观里的「夜间模式」开关换成「界面风格」：2×3 六张真实小样，点一下就换肤</li>
+  <li>六套皮肤：日系手账（默认）/ 暗黑治愈 / 极简专注 / 复古打字机 / 超萌可爱 / 赛博科技；颜色、字体、圆角、描边、渐变各成一套，结构不变</li>
+  <li>v0.6 追加后两套：超萌可爱（马卡龙渐变、气泡卡、圆角胶囊、点按果冻回弹）与赛博科技（深空底、青紫霓虹描边、科技网格、等宽字、点按霓虹闪）</li>
+  <li>即时生效、本机记忆；旧版「夜间模式」的选择自动迁移到对应皮肤（深色 → 暗黑治愈）</li>
+  <li>皮肤与壁纸正交：换皮肤不动壁纸，页头 / 页脚遮罩按皮肤给，保证图片上的字仍可读</li>
+</ul>
+
+<h3>2.6 明确不做</h3>
+<table>
+  <tr><th>能力</th><th>状态</th><th>原因</th></tr>
+  <tr><td>账号体系、云同步、多端</td><td><span class="tag out">不做</span></td><td>与 P1 冲突；一旦有服务端就有上传与合规成本。</td></tr>
+  <tr><td>富文本、图片、语音、附件</td><td><span class="tag out">不做</span></td><td>排版成本会挤占「先写下来」的核心动作。</td></tr>
+  <tr><td>心情打 tag、打卡连续天数</td><td><span class="tag out">不做</span></td><td>与 P4 冲突，容易变成任务化。</td></tr>
+  <tr><td>每日提醒 / 通知</td><td><span class="tag out">不做</span></td><td>网页版无法可靠推送，也非 MVP 必需。</td></tr>
+  <tr><td>补写历史日期</td><td><span class="tag out">不做</span></td><td>「只写今天」是产品的一部分，补写会削弱当下感。</td></tr>
+  <tr><td>问题板拖动排序</td><td><span class="tag out">不做</span></td><td>格子固定为 1–9；需要调位就改内容，交互成本更低。</td></tr>
+  <tr><td>搜索、标签、统计图表</td><td><span class="tag out">不做</span></td><td>数据量级的价值尚未验证，先不做。</td></tr>
+  <tr><td>导入备份</td><td><span class="tag done">已实现（v0.7）</span></td><td>见 FR-14：合并 / 覆盖两种模式。</td></tr>
+</table>
+
+<h3>2.6.1 v0.7 已交付（可恢复的备份 + 安卓包）</h3>
+<ul>
+  <li>设置 → 日记新增「从 JSON 导入」：读文件 → 预览（几天 / 几条 / 重叠多少）→ 合并或覆盖（FR-14）</li>
+  <li>导入保留原来的锁定状态；旧日期的草稿按跨天规则自动锁定</li>
+  <li>新增 <code>android-app/</code> 外壳工程与 <code>.github/workflows/android.yml</code>：push 后由 CI 出 debug APK，见 <code>android-app/README.md</code></li>
+  <li>网页版行为不变：导入 / 导出只在设置里多一行；页面检测到 <code>window.AndroidHost</code> 才走原生保存</li>
+</ul>
+
+<h3>2.6.2 v0.8 已交付（小鲸鱼）</h3>
+<ul>
+  <li>产品改名「小鲸鱼」，应用名、浏览器标题、关于页、安卓 <code>app_name</code> 同步；图标换成鲸鱼（矢量：网页 favicon + 安卓自适应图标前景，同一份路径）</li>
+  <li>写作页「写作提示」浮层底部新增 <b>随机问题</b>：从内置问题库随机抽 9 条填进问题板，只换问题不动正文（FR-15）；问题板空态与底部也各有一个入口</li>
+  <li>状态栏 / 导航栏改为边到边：页面画到系统栏下面，颜色跟随当前皮肤的纸色与壁纸，状态栏图标随皮肤明暗切换（深色皮肤用浅色图标）</li>
+  <li>安全区改用 <code>--sat</code> / <code>--sab</code> 两个 CSS 变量：网页版取 <code>env(safe-area-inset-*)</code>，安卓外壳把原生 insets 写进同名变量，两边同一套布局代码</li>
+</ul>
+
+<h3>2.6.3 v0.9 已交付（问题库扩容）</h3>
+<ul>
+  <li>随机问题库从 5199 条扩到 <b>10194 条</b>：新增 5 段共 5000 条（家庭与亲密关系 / 身体与健康 / 工作钱与社会 / 内心世界 / 感官与日常），每段 1000 条，同样是第一人称、10–30 字</li>
+  <li>去重从「原文完全一致」升级为「忽略空格与标点后比较」，避免同一句只换标点被当成两条；原始 10200 条 → 去重后 10194 条</li>
+  <li>抽签逻辑、浮层交互、正文保护全部不变；APK 版本号 0.9，仍需重新出包装机</li>
+</ul>
+
+<h3>2.6.4 v0.9.1 已交付（键盘不再挡住正在写的字）</h3>
+<ul>
+  <li>问题：手机输入法弹起后，写作页的 textarea 仍然撑到屏幕底，光标越往下写越被键盘盖住，看不见自己正在打的字</li>
+  <li>原因：布局本来就用 <code>--kb</code>（键盘高度）让整屏上缩，但网页版的估算逻辑在检测到 <code>window.AndroidHost</code> 时直接 return，而安卓外壳只给页面发了 <code>--sat</code> / <code>--sab</code>，<code>--kb</code> 一直是 0</li>
+  <li>修法：安卓侧把 <code>WindowInsetsCompat.Type.ime()</code> 的底部内边距作为第三参数传给 <code>setSafeArea(top, bottom, kb)</code>；网页侧去掉「有安卓桥就跳过」的分支，改成「原生给了 <code>--kb</code> 才跳过」（老 APK 仍能靠 visualViewport 估算自救）</li>
+  <li>配套：<code>--kb</code> 变化后补一次「光标回到可视区」（底部输入滚到底、中间改写重设选区，中文选词期间不动）；浮层 / 全屏页 / 底部 Tab 也跟着让出键盘高度，其中 <code>--kb &gt; 20px</code> 时底部 Tab 直接收起（<code>html.kb-on</code>），「保存草稿 / 提交锁定」那一条贴着键盘上沿，正文多显示约 66px；<code>.app</code> 补 vh 兜底，不认 <code>dvh</code> 的老 WebView 也能缩</li>
+  <li>数据格式未变；APK <code>versionCode</code> 10 / <code>versionName</code> 0.9.1，需重新出包装机</li>
+</ul>
+
+<h3>2.6.5 v0.9.2 已交付（回看的连贯性 + 正文字号）</h3>
+<ul>
+  <li>正文字号三档（FR-16）：设置 → 外观 →「正文字号」小 / 中 / 大，只作用于写作框与详情正文，界面字号不受影响；写进 <code>settings.fs</code>，六套皮肤各自的比例照旧乘上去</li>
+  <li>「往年的今天」（FR-17）：回顾日视图在累计行下面、详情页在正文下面，列出同一 <code>MM-DD</code> 往年的条目，每行「年份 · 摘要 · 字数」，点击进当晚的详情</li>
+  <li>详情页底部「上一篇 / 下一篇」：按写成日期前后翻页，没有相邻篇时只留一个</li>
+  <li>备份不再凭感觉：设置 → 日记 →「上次备份」显示上次导出到第几天、距今多少天；超过 30 天或从未导出时副标题转成提醒色。只是记录，不会自动落盘</li>
+  <li>首次打开写作页给一句空态提示「还没写过。先看一眼这 9 个问题」，写完第一个字即消失，不常驻</li>
+  <li>数据格式只多两个可选字段（<code>settings.fs</code>、<code>settings.exportedAt</code>），老数据照旧可读；安卓外壳 Java 未改，APK <code>versionCode</code> 升到 11 / <code>versionName</code> 0.9.2</li>
+</ul>
+
+<h3>2.7 后续候选（按预期价值排序）</h3>
+<table>
+  <tr><th>候选</th><th>要解决的问题</th><th>预估成本</th></tr>
+  <tr><td>PWA：添加到桌面、离线可用</td><td>网页书签容易丢；开浏览器有摩擦</td><td>低</td></tr>
+  <tr><td>写作日偏移（凌晨 4 点换天）</td><td>半夜写的人一提交就被判为隔天，违反直觉</td><td>低</td></tr>
+  <tr><td>锁定后自动导出一份备份</td><td><span class="tag done">提醒已实现（v0.9.2）</span> 设置里显示「上次备份 · 距今多少天」，超过 30 天或从未导出时转成提醒色；自动落盘仍未做</td><td>低</td></tr>
+  <tr><td>内置壁纸预设（纸纹 / 渐变）</td><td>找图有成本，多数人不会设置壁纸</td><td>低</td></tr>
+  <tr><td>JSON 导入</td><td><span class="tag done">已实现（v0.7）</span></td><td>—</td></tr>
+  <tr><td>周 / 月回顾摘要</td><td><span class="tag done">部分实现（v0.9.2）</span> 月/年视图有「本月已写 X 天 · 共 Y 字」累计行，日视图与详情页有「往年的今天」；周摘要与文字总结未做</td><td>中</td></tr>
+</table>
+
+<!-- ================= 3 数据 ================= -->
+<h2 id="s3"><span class="n">03</span>核心概念与数据</h2>
+
+<h3>3.1 名词</h3>
+<table>
+  <tr><th>名词</th><th>定义</th></tr>
+  <tr><td>问题板</td><td>全局唯一的 9 个写作提示，固定 3×3 网格，但只有 9 个格子（最多 9 条），不随日期变化。</td></tr>
+  <tr><td>日记条目</td><td>以日期（<code>YYYY-MM-DD</code>）为键的一条记录，含正文与状态。</td></tr>
+  <tr><td>草稿</td><td>状态为 <code>draft</code> 的条目，可反复修改，跨天未提交会被自动锁定。</td></tr>
+  <tr><td>锁定</td><td>状态为 <code>locked</code> 的条目，永久只读；手动提交与跨天自动锁定两条路径。</td></tr>
+  <tr><td>字数</td><td>去掉所有空白字符后的字符数；中英文、标点均按 1 计。</td></tr>
+</table>
+
+<h3>3.2 数据结构</h3>
+<pre><code>// localStorage["writing-diary:v1"]
+{
+  "questions": ["…", "…", "", …],        // 固定长度 9，空串表示未设置
+  "settings": { "skin": "paper", "fs": "m", "wallv": 42, "exportedAt": "2026-10-23T14:20:05.118Z" },
+  "entries": {
+    "2026-10-21": {
+      "date": "2026-10-21",
+      "content": "今天下午下了很久的雨……",
+      "wordCount": 39,
+      "status": "locked",                // draft | locked
+      "createdAt": "2026-10-21T00:10:22.004Z",
+      "updatedAt": "2026-10-21T00:20:11.512Z",
+      "lockedAt":  "2026-10-21T00:20:11.512Z"
+    }
+  }
+}</code></pre>
+
+<table>
+  <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+  <tr><td><code>questions[i]</code></td><td>string</td><td>第 i 格问题，最长 50 字；空串 = 未设置。</td></tr>
+  <tr><td><code>settings.skin</code></td><td>string</td><td><code>paper</code> / <code>cozy</code> / <code>focus</code> / <code>press</code> / <code>cute</code> / <code>tech</code>，缺省 <code>paper</code>。非法值按 FR-11 的迁移规则回退。旧版 <code>settings.theme</code>（<code>light</code> / <code>dark</code>）只作迁移来源，读到时自动改写为 <code>skin</code>，字段保留不删。</td></tr>
+  <tr><td><code>settings.fs</code></td><td>string</td><td>正文字号档位 <code>s</code> / <code>m</code> / <code>l</code>（FR-16），缺省 <code>m</code>；非法值回退 <code>m</code>。</td></tr>
+  <tr><td><code>settings.exportedAt</code></td><td>ISO string | null</td><td>上一次成功导出备份的时刻（FR-10「上次备份」），缺省 <code>null</code> = 从未导出。只用于提示，不参与导出内容。</td></tr>
+  <tr><td><code>settings.wallv</code></td><td>number</td><td>壁纸浓度 0–100 连续值（0 = 最模糊最淡，100 = 最清晰），缺省 42。旧版 <code>settings.wall</code> 0/1/2 已废弃，仅作历史数据保留。</td></tr>
+  <tr><td><code>entries.{date}.content</code></td><td>string</td><td>原文，保留换行与空格（字数统计时才去空白）。</td></tr>
+  <tr><td><code>status</code></td><td>string</td><td><code>draft</code> 可编辑；<code>locked</code> 只读。</td></tr>
+  <tr><td><code>createdAt / updatedAt</code></td><td>ISO string</td><td>首次落库时间 / 最后一次保存时间。</td></tr>
+  <tr><td><code>lockedAt</code></td><td>ISO string</td><td>手动提交 = 提交时刻；跨天自动锁定 = 该日 23:59。</td></tr>
+</table>
+
+<h3>3.3 存储键</h3>
+<table>
+  <tr><th>键</th><th>内容</th><th>说明</th></tr>
+  <tr><td><code>writing-diary:v1</code></td><td>问题板 + 偏好 + 全部日记</td><td>单条 JSON；导出备份即取此对象。</td></tr>
+  <tr><td><code>writing-diary:wallpaper</code></td><td>压缩后的 JPEG data URL</td><td>单存，避免与日记混在一起；不进入导出文件。</td></tr>
+</table>
+
+<h3>3.4 条目状态机</h3>
+<div class="flow">
+  <span class="node z">不存在</span><span class="arrow">— 首次输入非空 —▶</span>
+  <span class="node a">draft 草稿</span><span class="arrow">— 提交 / 跨天 —▶</span>
+  <span class="node a">locked 锁定</span>
+</div>
+<div class="flow">
+  <span class="node a">draft 草稿</span><span class="arrow">— 内容清空 —▶</span>
+  <span class="node z">删除</span>
+  <span class="arrow">　|　</span>
+  <span class="node a">draft 草稿</span><span class="arrow">— 跨天且内容为空 —▶</span>
+  <span class="node z">删除</span>
+</div>
+<p class="callout">锁定是单向的：<code>locked</code> 不存在回到 <code>draft</code> 的路径，界面上也不提供任何撤销入口。</p>
+
+<!-- ================= 4 功能需求 ================= -->
+<h2 id="s4"><span class="n">04</span>功能需求</h2>
+<p>共 17 条。每条包含：目标、交互与规则、异常分支、验收标准。优先级均为 P0（当前版本已实现）。</p>
+
+<!-- FR-01 -->
+<div class="req" id="fr01">
+  <h4><span class="id">FR-01</span>九宫格问题板 <span class="tag done">已实现</span></h4>
+  <p><strong>目标：</strong>让用户预先写下 9 个「问自己的问题」，写作时不用面对空白页。</p>
+  <table>
+    <tr><th>规则</th><th>细节</th></tr>
+    <tr><td>数量</td><td>固定 9 格，3 列 × 3 行；不支持增删格子。</td></tr>
+    <tr><td>编辑</td><td>点格子 → 底部浮层「添加问题 / 编辑问题」，显示「第 N 格」；底部实时显示 <code>n/50</code>。</td></tr>
+    <tr><td>长度</td><td>单条上限 50 字（<code>maxlength=50</code>，保存时再 <code>slice(0,50)</code>）；连续空白折叠为一个空格、首尾去空。</td></tr>
+    <tr><td>空值</td><td>保存空内容 = 清除该格，不写入空串以外的东西；提示「空问题已清除」。</td></tr>
+    <tr><td>删除</td><td>已有内容的格子，浮层内提供「删除」按钮，二次无需确认（可重新填写）。</td></tr>
+    <tr><td>示例</td><td>9 格全空时，页面顶部出现说明块 +「填入一组示例问题」，一键写入 9 条默认问题（可逐格修改）。</td></tr>
+    <tr><td>作用域</td><td>问题板全局唯一，不随日期变化；只存问题，不存答案；历史日记不会因为改问题而变化。</td></tr>
+  </table>
+  <p><strong>验收：</strong>① 9 格均可独立编辑；② 超过 50 字被截断且计数正确；③ 保存空内容后该格回到「＋添加问题」；④ 示例填充后 9 格全部有内容且可改；⑤ 修改问题后，已锁定日记正文不变。</p>
+</div>
+
+<!-- FR-02 -->
+<div class="req" id="fr02">
+  <h4><span class="id">FR-02</span>写日记（每天一篇） <span class="tag done">已实现</span></h4>
+  <p><strong>目标：</strong>打开就能写，写到一半也不会丢。</p>
+  <table>
+    <tr><th>规则</th><th>细节</th></tr>
+    <tr><td>对象</td><td>只写「今天」，一天一篇；不能选日期、不能补写历史。</td></tr>
+    <tr><td>页头</td><td>显示「2026年10月21日 周三」+ 副标题两种状态之一：提交前可随时修改 / 已锁定 + 提交于 hh:mm。</td></tr>
+    <tr><td>编辑器</td><td>纯文本 textarea，宋体 17px，行高 2.05，占满可视区，底部留出 96px 避免被按钮遮挡。</td></tr>
+    <tr><td>自动保存</td><td>输入后 400ms 防抖写入 localStorage，左下角显示「已自动保存 08:12」。</td></tr>
+    <tr><td>手动保存</td><td>「保存草稿」按钮立即写入并提示「草稿已保存」；无内容时提示「还没有内容可以保存」。</td></tr>
+    <tr><td>字数</td><td>左下角实时显示「n 字」，去空白字符计数。</td></tr>
+    <tr><td>空内容</td><td>清空正文即从存储中删除该日条目，不留空草稿。</td></tr>
+    <tr><td>切换 Tab</td><td>离开再回来，正文与光标内容不丢（数据在 S 里，渲染时回填）。</td></tr>
+  </table>
+  <p><strong>验收：</strong>① 输入后 0.5s 内自动保存提示出现；② 刷新页面正文仍在；③ 清空文字后刷新不出现空条目；④ 切到问题板再回来内容不变；⑤ 字数与去空白计数一致。</p>
+</div>
+
+<!-- FR-03 -->
+<div class="req" id="fr03">
+  <h4><span class="id">FR-03</span>写作时查看提示 <span class="tag done">已实现</span></h4>
+  <table>
+    <tr><th>规则</th><th>细节</th></tr>
+    <tr><td>入口</td><td>写作页右上角「问题」按钮。</td></tr>
+    <tr><td>形式</td><td>底部浮层，标题「写作提示」，右上显示「n / 9」。</td></tr>
+    <tr><td>只读</td><td>浮层内不能编辑问题；未设置的格子显示「未设置」。</td></tr>
+    <tr><td>不干扰</td><td>浮层底部注明「写作内容不受影响」；关闭（点空白 /「收起」/ Esc）后正文不丢。</td></tr>
+    <tr><td>尺寸</td><td>竖排列表（序号 + 问题文字，行高 1.75），9 条在 390×844 下一屏看全，不遮挡顶部日期。</td></tr>
+  </table>
+  <p><strong>验收：</strong>① 浮层打开时正文可见且不被改写；② 三种关闭方式均生效；③ 未设置的格子显示「未设置」而非空白。</p>
+</div>
+
+<!-- FR-04 -->
+<div class="req" id="fr04">
+  <h4><span class="id">FR-04</span>提交锁定 <span class="tag done">已实现</span></h4>
+  <p><strong>目标：</strong>给写作一个明确的「结束」，从此不再修改。</p>
+  <table>
+    <tr><th>规则</th><th>细节</th></tr>
+    <tr><td>前置</td><td>无内容时点提交 → 提示「先写点内容再提交吧」，不进入确认。</td></tr>
+    <tr><td>二次确认</td><td>浮层标题「提交后不可修改」，正文说明字数与后果，按钮「再想想 / 确定锁定」。</td></tr>
+    <tr><td>结果</td><td>状态转 <code>locked</code>，记录 <code>lockedAt</code>；编辑器变只读，底部按钮换成「去回顾看看」，页头出现「已锁定」徽章与提交时间。</td></tr>
+    <tr><td>文案</td><td>锁定后顶部提示条：「这篇日记已提交锁定，永久只读；回顾里仍可查看。」</td></tr>
+    <tr><td>不可逆</td><td>界面无任何解锁入口；数据层也没有回退路径。</td></tr>
+    <tr><td>反馈</td><td>Toast「已提交锁定」1.7s。</td></tr>
+  </table>
+  <p><strong>验收：</strong>① 空内容无法提交；② 确认前可取消且正文不变；③ 确认后刷新仍是只读；④ 锁定页不出现任何编辑按钮；⑤ 提交时间显示到分钟。</p>
+</div>
+
+<!-- FR-05 -->
+<div class="req" id="fr05">
+  <h4><span class="id">FR-05</span>跨天自动锁定 <span class="tag done">已实现</span></h4>
+  <p><strong>目标：</strong>昨天没提交的草稿，不给「事后补完」的机会，保持「每天只写当天」的节奏。</p>
+  <table>
+    <tr><th>规则</th><th>细节</th></tr>
+    <tr><td>触发时机</td><td>① 页面加载时 ② 每 30 秒轮询 ③ 从后台回到前台（visibilitychange）。</td></tr>
+    <tr><td>判定</td><td>条目状态为 <code>draft</code> 且日期键 &lt; 今天。</td></tr>
+    <tr><td>处理</td><td>内容非空 → 转 <code>locked</code>，<code>lockedAt</code> 记为<strong>那一天</strong>的 23:59；内容为空 → 直接删除。</td></tr>
+    <tr><td>跨天当下</td><td>页面自动重渲染：写作页变为新的一天、空白可写；昨天那条进入回顾里成为只读。</td></tr>
+  </table>
+  <p><strong>验收：</strong>① 次日打开，昨天的草稿变只读且正文完整；② 空草稿不残留；③ 页面停留在前台跨过 00:00，30 秒内自动切换到新的一天。</p>
+  <p class="callout">已知取舍：按本地 00:00 换天，深夜写作会被截断。「凌晨 4 点算新一天」列入候选（见 2.6）。</p>
+</div>
+
+<!-- FR-06 -->
+<div class="req" id="fr06">
+  <h4><span class="id">FR-06</span>回顾 · 日视图（月历） <span class="tag done">已实现</span></h4>
+  <table>
+    <tr><th>规则</th><th>细节</th></tr>
+    <tr><td>结构</td><td>月历，周一为一周起点，7 列；表头「一 二 三 四 五 六 日」。</td></tr>
+    <tr><td>有日记的日期</td><td>浅绿底 + 深色数字，下方小字「· 39字」；字数超过 9999 时不换行溢出。</td></tr>
+    <tr><td>今天</td><td>外描边（陶土色）标示，不与绿底冲突。</td></tr>
+    <tr><td>未来日期</td><td>灰字、不可点击（<code>disabled</code>）。</td></tr>
+    <tr><td>月切换</td><td>‹ › 切月；不能翻到今天之后的月份（下月箭头禁用）。</td></tr>
+    <tr><td>点击行为</td><td>今天的日记：已锁定 → 详情页；未锁定 → 跳到写作页。历史天：有内容 → 详情页；无内容 → Toast「这天没有日记」。</td></tr>
+    <tr><td>汇总</td><td>日历下方「本月已写 3 天 · 共 412 字」；0 天时显示「本月还没有记录」。</td></tr>
+    <tr><td>最近写过</td><td>汇总下一块列表，最多 3 条（月/日 + 正文首行截断 + 字数），点行进详情；一条都没有时整块不出现。</td></tr>
+  </table>
+  <p><strong>验收：</strong>① 空白日期点击有提示且不跳页；② 未来日期点不动；③ 今天描边可见；④ 汇总数与实际条目一致；⑤ 有内容的日期会同时出现在「最近写过」里并可点开。</p>
+</div>
+
+<!-- FR-07 -->
+<div class="req" id="fr07">
+  <h4><span class="id">FR-07</span>回顾 · 月视图 <span class="tag done">已实现</span></h4>
+  <table>
+    <tr><th>规则</th><th>细节</th></tr>
+    <tr><td>结构</td><td>12 行竖排列表，每行「N月」+「已写 X 天」+ 该月字数；没有记录的月份显示「没有记录」，字色比有记录的月份淡一档。</td></tr>
+    <tr><td>状态</td><td>有内容的月份：月份名与计数转为墨绿；当前月：月份名前加 4px 陶土圆点。</td></tr>
+    <tr><td>下钻</td><td>点某月 → 切回日视图并定位到该月。</td></tr>
+    <tr><td>年份</td><td>‹ › 切年（允许翻到未来年份，便于查看空年）。</td></tr>
+    <tr><td>汇总</td><td>「本年已写 12 天 · 共 2,340 字」。</td></tr>
+  </table>
+</div>
+
+<!-- FR-08 -->
+<div class="req" id="fr08">
+  <h4><span class="id">FR-08</span>回顾 · 年视图 <span class="tag done">已实现</span></h4>
+  <table>
+    <tr><th>规则</th><th>细节</th></tr>
+    <tr><td>结构</td><td>年份横条列表，每条「2026 年」+「已写 X 天 · N 字」。</td></tr>
+    <tr><td>排序</td><td>倒序（新的年份在上）；至少包含当前年。</td></tr>
+    <tr><td>下钻</td><td>点某年 → 切到该年的月视图。</td></tr>
+    <tr><td>汇总</td><td>「共 1 年有记录」。</td></tr>
+  </table>
+</div>
+
+<!-- FR-09 -->
+<div class="req" id="fr09">
+  <h4><span class="id">FR-09</span>只读详情页 <span class="tag done">已实现</span></h4>
+  <table>
+    <tr><th>规则</th><th>细节</th></tr>
+    <tr><td>入口</td><td>回顾里点击有内容的日期（含今天已锁定的）。</td></tr>
+    <tr><td>内容</td><td>顶部「‹ 返回」+ 状态（已锁定·只读 / 草稿·只读）；标题为中文长日期；元信息「39 字 · 提交于 2026-10-21 08:11」；正文宋体 16.5px、行高 2.05、保留换行。</td></tr>
+    <tr><td>返回</td><td>「‹ 返回」或 Esc 回到回顾页，保持原模式与原月份。</td></tr>
+    <tr><td>页尾</td><td>正文之后依次是「往年的今天」（同月同日的历史条目）与「上一篇 / 下一篇」，规则见 FR-17。</td></tr>
+    <tr><td>空内容</td><td>正常情况不会出现；若出现显示「（没有内容）」。</td></tr>
+  </table>
+</div>
+
+<!-- FR-10 -->
+<div class="req" id="fr10">
+  <h4><span class="id">FR-10</span>设置与导出 <span class="tag done">已实现</span></h4>
+  <p><strong>结构：</strong>底部浮层，右上「完成」关闭；分组为「外观 / 日记」。</p>
+  <table>
+    <tr><th>项</th><th>行为</th></tr>
+    <tr><td>九宫格问题板</td><td>关闭浮层并切到问题板 Tab。</td></tr>
+    <tr><td>导出为文本</td><td>生成 <code>写作日记_YYYY-MM-DD.txt</code>：标题、生成时间、天数，然后按日期正序输出「■ 日期 / n 字 · 状态 · 提交于 … / 正文」，条目间用分隔线。</td></tr>
+    <tr><td>导出为 JSON</td><td>生成 <code>写作日记_YYYY-MM-DD.json</code>：<code>{app, version:1, exportedAt, questions[], entries[]}</code>，含 wordCount 与三个时间戳，供未来导入使用。</td></tr>
+    <tr><td>上次备份</td><td>只读一行：未导出过显示「还没导出过备份」，否则显示「8月1日 · 已经 83 天没备份了」；超过 30 天或从未导出时副标题用提醒色（<code>--rust-ink</code>），30 天内用次要色。每次成功导出文本或 JSON 时更新。</td></tr>
+    <tr><td>关于</td><td>版本、数据存放位置、账号/云同步「无」、已写入天数。</td></tr>
+    <tr><td>无内容时导出</td><td>提示「还没有日记可以导出」，不生成空文件。</td></tr>
+  </table>
+  <p><strong>说明：</strong>导出不含壁纸图片；也不导出草稿以外的运行时状态（如当前 Tab）。</p>
+</div>
+
+<!-- FR-11 -->
+<div class="req" id="fr11">
+  <h4><span class="id">FR-11</span>界面风格（6 套皮肤） <span class="tag done">已实现（v0.5–v0.6）</span></h4>
+  <p><strong>目标：</strong>同一份数据、同一套结构，换一种「本子的气质」——夜里不想被屏幕刺到，白天想要一本手账，专注时想要没有装饰，写长文时想要打字机的沉浸感，心情好时想要一点可爱，深夜写代码的想要一块终端。原「夜间模式」只有亮暗两档，无法覆盖这些场景。</p>
+  <table>
+    <tr><th>规则</th><th>细节</th></tr>
+    <tr><td>入口</td><td>设置 → 外观 →「界面风格」：2×3 六张小样，右上角显示当前皮肤名（如「日系手账」）。</td></tr>
+    <tr><td>六套皮肤</td><td><code>paper</code> 日系手账（默认）/ <code>cozy</code> 暗黑治愈 / <code>focus</code> 极简专注 / <code>press</code> 复古打字机 / <code>cute</code> 超萌可爱 / <code>tech</code> 赛博科技。每套 = 一组 CSS 变量 + 少量结构覆盖（圆角、描边、字体、渐变、贴纸）。</td></tr>
+    <tr><td>小样</td><td>每张 = 迷你三格 + 页头条 + 主按钮点，用真实 CSS 变量渲染，跟随皮肤变化；选中项描边 + 右上角对勾。</td></tr>
+    <tr><td>切换</td><td>点小样 → 写入 <code>settings.skin</code> → 立即换肤（不做过渡动画）→ Toast「已切换到「…」」。设置浮层原地重绘，滚动位置不变。</td></tr>
+    <tr><td>实现</td><td>皮肤选择器挂在 <code>&lt;html data-skin="…"&gt;</code>，同一套选择器复用到小样上（<code>.skin-pv[data-skin]</code> 局部覆盖变量），所以小样永远和真皮肤一致。</td></tr>
+    <tr><td>记忆</td><td>写 <code>settings.skin</code>，下次打开保持。</td></tr>
+    <tr><td>浏览器配色</td><td><code>meta[name=theme-color]</code> 跟随皮肤底色（#F6EFE2 / #191714 / #F7F8F9 / #EADFC6 / #FFF6F9 / #070B14）。</td></tr>
+    <tr><td>默认</td><td>首次为 <code>paper</code>，不跟随系统。</td></tr>
+    <tr><td>迁移</td><td>v0.4 及更早只存 <code>settings.theme</code>：<code>dark</code> → <code>cozy</code>，其余 → <code>paper</code>；缺 <code>theme</code> 时也落在 <code>paper</code>。v0.5 之后新增 <code>cute</code> / <code>tech</code>，老数据不需要迁移，选择照旧。</td></tr>
+    <tr><td>与壁纸的关系</td><td>两者正交：换皮肤不改壁纸，浓度照旧。页头 / 页脚的分层遮罩色按皮肤给（深色皮肤罩层更深），保证压在图片上的标题仍可读。</td></tr>
+  </table>
+  <p><strong>验收：</strong>① 六套皮肤在问题板 / 写作 / 回顾 / 详情 / 设置 / 小贴士六类页面都无残留异色块；② 每套正文对比度 ≥ 4.5:1，Tab 未选中文字也 ≥ 4.5:1；③ 切换后刷新仍是同一套；④ 旧版深色用户升级后落在 <code>cozy</code>，不会先闪一帧亮色；⑤ 开着壁纸换皮肤，页头遮罩仍压得住图片。</p>
+</div>
+
+<!-- FR-12 -->
+<div class="req" id="fr12">
+  <h4><span class="id">FR-12</span>自定义壁纸 <span class="tag done">已实现（v0.2）</span></h4>
+  <p><strong>目标：</strong>让这个本子看起来像「自己的」，同时不牺牲文字可读性。</p>
+  <table>
+    <tr><th>规则</th><th>细节</th></tr>
+    <tr><td>入口</td><td>设置 → 外观 →「自定义壁纸」，调起系统文件选择（仅图片）。</td></tr>
+    <tr><td>处理</td><td>等比缩放到长边 ≤ 1600px → 画到 canvas（透明图垫白底）→ 导出 JPEG 质量 0.82。</td></tr>
+    <tr><td>容量</td><td>原图 &gt; 20MB 拒绝并提示；写入失败（配额不足）提示「换一张小一点的」，且不破坏已有数据。</td></tr>
+    <tr><td>呈现</td><td>壁纸铺满整屏，轻微模糊（2.5px）+ 降饱和；上层叠一层纸色半透明罩，所有文字与控件都在罩子之上。</td></tr>
+    <tr><td>浓度</td><td>一个 0–100 的拖拽条，左「模糊」右「清晰」，默认 42%。罩层不透明度 = 0.96 − 0.86 × 浓度，即 0% → 0.96（几乎纯纸色）到 100% → 0.10（几乎原图）；底层模糊 = 7px − 6.4 × 浓度，即 7px → 0.6px。深色皮肤（暗黑治愈）罩层自动 +0.06。拖动时百分比实时回显、背景即时变化、松手后写入本地。</td></tr>
+    <tr><td>管理</td><td>设置里显示缩略图预览；可「移除壁纸」恢复默认纸色。</td></tr>
+    <tr><td>存储</td><td>存 <code>writing-diary:wallpaper</code>，与日记数据分离；不进导出备份。</td></tr>
+  </table>
+  <p><strong>验收：</strong>① 选图后立即生效且刷新仍在；② 拖拽条从最左到最右，罩层与模糊连续变化、百分比同步；③ 移除后回到纯纸色；④ 默认 42% 下正文清晰；⑤ 超大图有明确提示且原有日记不受影响。</p>
+</div>
+
+<!-- FR-13 -->
+<div class="req" id="fr13">
+  <h4><span class="id">FR-13</span>写作小贴士 <span class="tag done">已实现（v0.4）</span></h4>
+  <p><strong>目标：</strong>问题板给了「写什么」，这里补「怎么写」——在用户卡住的同一页给一个可翻的入口，而不是把他推去外部搜索。</p>
+  <table>
+    <tr><th>规则</th><th>细节</th></tr>
+    <tr><td>入口</td><td>问题板底部一张卡片「写作小贴士 / 没灵感的时候翻一翻 · 基础 4 篇 + 技巧 5 篇」，常在（空态、填满都显示）。</td></tr>
+    <tr><td>目录</td><td>全屏页：标题「写作小贴士」+ 副标题「基础 4 篇 · 技巧 5 篇 · 每篇一分钟」，按「写作基础 / 技巧提升」两组，01–09 连续编号。</td></tr>
+    <tr><td>正文</td><td>每篇：标题、一句导语、2–3 段正文（宋体 16px / 行高 1.95）、底下一个「试着写一句」的提示块。</td></tr>
+    <tr><td>翻页</td><td>正文底部「上一篇 / 下一篇」显示邻篇标题，可直接跳；返回到目录。</td></tr>
+    <tr><td>内容</td><td>9 篇静态文本写在 <code>index.html</code> 的 <code>TIPS</code> 数组里，不发请求、不占存储、不记阅读进度。</td></tr>
+    <tr><td>语气</td><td>「提示，不是规则」；不出现字数目标、打卡、评分、排行榜。</td></tr>
+  </table>
+  <p><strong>验收：</strong>① 问题板底部卡片两种状态都在；② 目录 9 条齐全且分组正确；③ 点进任一篇，正文与「试着写一句」完整；④ 上一篇 / 下一篇不越界（首篇无上一篇、末篇无下一篇）；⑤ 返回落在目录、再返回落在问题板；⑥ 深色模式下正文与提示块可读。</p>
+</div>
+
+<!-- FR-14 -->
+<div class="req" id="fr14">
+  <h4><span class="id">FR-14</span>从 JSON 导入 <span class="tag done">已实现（v0.7）</span></h4>
+  <p><strong>目标：</strong>让「导出 JSON」这条备份真的能还原——换设备、清缓存、装安卓包之后，旧日记能搬回来。</p>
+  <table>
+    <tr><th>规则</th><th>细节</th></tr>
+    <tr><td>入口</td><td>设置 → 日记 →「从 JSON 导入」，副标题「恢复备份 · 合并或覆盖」。</td></tr>
+    <tr><td>文件</td><td>只吃本 App 导出的 JSON（<code>{ app, version, questions[], entries[] }</code>）；也兼容直接贴 <code>localStorage</code> 里的对象（<code>entries</code> 是按日期索引的对象）。上限 8MB。</td></tr>
+    <tr><td>校验</td><td>逐条校验：日期须是 <code>YYYY-MM-DD</code>、正文去空白后非空，否则那条直接丢弃（空草稿不会导入）。问题按 <code>order</code> 排序、截到 50 字、最多 9 条。</td></tr>
+    <tr><td>预览</td><td>读文件后先出一张「导入预览」浮层：文件名、日记天数、问题条数、「与本机重叠 N 天（其中 M 天已锁定）」，再让用户选合并还是覆盖。</td></tr>
+    <tr><td>合并</td><td>只补本机还没有内容的日期，已有内容一条都不动；问题板只在当前 9 格全空时才填入。</td></tr>
+    <tr><td>覆盖</td><td>清空现有日记与问题板，完全换成文件里的内容。</td></tr>
+    <tr><td>状态</td><td>保留文件里的 <code>status</code>：导入的锁定篇仍是只读；导入的旧日期草稿交给 <code>sweepDrafts()</code> 按跨天规则锁定（<code>lockedAt</code> 记当日 23:59）。</td></tr>
+    <tr><td>回执</td><td>Toast「已导入 N 天」，有过跳过的写「已导入 N 天，跳过 M 天已有记录」；一条没进就说「没有可导入的新日记」。</td></tr>
+  </table>
+  <p><strong>验收：</strong>① 导出再导入，天数与正文字数对得上；② 合并模式不覆盖已有锁定篇；③ 覆盖模式确实清空旧的；④ 坏文件（不是 JSON / 空文件 / 日期非法）只给 Toast，不破坏现有数据；⑤ 导入后刷新，数据仍在。</p>
+</div>
+
+<!-- FR-15 -->
+<div class="req" id="fr15">
+  <h4><span class="id">FR-15</span>随机问题（问题库） <span class="tag done">已实现（v0.8）</span></h4>
+  <p><strong>目标：</strong>不用自己想问题，按一下就能换 9 个新提示，保持「每天被问一件小事」的新鲜感。</p>
+  <table>
+    <tr><th>规则</th><th>细节</th></tr>
+    <tr><td>入口</td><td>写作页「问题」→「写作提示」浮层底部「随机问题」（主按钮）；问题板空态「从问题库随机抽 9 个」；问题板底部「随机换一组」。</td></tr>
+    <tr><td>问题库</td><td>内置 <code>RANDOM_Q</code>：10194 条中文写作提示，分 15 段写进 <code>index.html</code>（v0.8 的 10 段各 520 条 + v0.9 补的 5 段各 1000 条），加载时按「忽略空格与标点」的键去重一次（原始 10200 条 → 10194 条）。不联网、不请求任何接口。</td></tr>
+    <tr><td>抽取</td><td>洗牌抽签法取 9 条互不重复；问题板被整体替换为这 9 条并立即持久化。</td></tr>
+    <tr><td>不碰正文</td><td>只改 <code>S.questions</code>，不动 <code>S.entries</code>；浮层里的 9 条原地刷新（不重播上滑动画、不打断滚动），Toast「已换一组问题」。</td></tr>
+    <tr><td>边界</td><td>问题库为空时 Toast「问题库是空的」并保持原问题板；空槽位不会被抽中，9 条永远填满。</td></tr>
+  </table>
+  <p><strong>验收：</strong>① 点一次「随机问题」，浮层里 9 条全变且互不重复；② 正文不受影响，退出后回到写作页内容仍在；③ 连续点多次不报错、不卡顿；④ 刷新后问题板仍是最后一次抽到的那 9 条；⑤ 关于页显示的问题库条数与实际一致。</p>
+</div>
+
+<!-- FR-16 -->
+<div class="req" id="fr16">
+  <h4><span class="id">FR-16</span>正文字号（三档） <span class="tag done">已实现（v0.9.2）</span></h4>
+  <p><strong>目标：</strong>同一套皮肤，有人觉得正文偏小、有人想一屏多放几行。给一个只管正文的开关，不去动界面字号，免得九宫格、日历被撑乱。</p>
+  <table>
+    <tr><th>规则</th><th>细节</th></tr>
+    <tr><td>入口</td><td>设置 → 外观 →「正文字号」，分段控件「小 / 中 / 大」，右侧标注当前档位「中 · 只影响正文」。</td></tr>
+    <tr><td>作用范围</td><td>写作框（<code>#ta</code>）与详情正文（<code>.entry .content</code>）；标题、按钮、日历、问题格等界面元素一律不变。</td></tr>
+    <tr><td>换算</td><td>三档 = 比例 <code>0.93 / 1 / 1.12</code>，写进根节点 <code>html[data-fs]</code> 的 CSS 变量 <code>--fs</code>，各处字号写成 <code>calc(基准px * var(--fs))</code>。所以六套皮肤各自不同的正文基准（paper 15.5 / press 16.5 / cute 15.5 …）都能按同一比例放大缩小。</td></tr>
+    <tr><td>持久化</td><td>写入 <code>settings.fs</code>（<code>s</code> / <code>m</code> / <code>l</code>），立即生效并 Toast；刷新与重开保持。</td></tr>
+    <tr><td>边界</td><td>非法或缺省值一律回退 <code>m</code>；「大」档在 360 宽下仍不横向溢出。</td></tr>
+  </table>
+  <p><strong>验收：</strong>① 切到大号，写作框与详情正文明显变大，页头、Tab、日历字号不变；② 六套皮肤各切一次，正文基准差异仍在（press 仍比 paper 大）；③ 刷新后档位保持；④ 320 / 360 宽下大号正文不撑破容器。</p>
+</div>
+
+<!-- FR-17 -->
+<div class="req" id="fr17">
+  <h4><span class="id">FR-17</span>回看的连贯性（往年的今天 + 前后篇） <span class="tag done">已实现（v0.9.2）</span></h4>
+  <p><strong>目标：</strong>写满一年以后，回顾不该只有「这个月写了几篇」。同一句提示在去年今天被怎么回答、前一天与后一天写了什么，都是现成的线索，只是此前点不到。</p>
+  <table>
+    <tr><th>规则</th><th>细节</th></tr>
+    <tr><td>往年的今天 · 入口</td><td>回顾 → 日视图（仅当月，即「今天」所在月）：累计行下面、「最近写过」上面多一块「往年的今天」；只读详情页：正文结束后、翻页条之前。</td></tr>
+    <tr><td>取数</td><td>与当前日期同 <code>MM-DD</code>、年份更早、且有内容的条目，年份新的在前，最多 3 条。跨闰年按 <code>MM-DD</code> 直接比，2 月 29 日只在闰年出现。</td></tr>
+    <tr><td>每行内容</td><td>「年份 · 摘要（去掉换行与空白，超过 22 字截断加省略号）· N 字」；整行可点，进那一天的详情。</td></tr>
+    <tr><td>空态</td><td>一条都没有时整块不出现，不留空标题。</td></tr>
+    <tr><td>前后篇</td><td>详情页底部两栏「上一篇 / 下一篇」，按写成日期相邻、跳过没有内容的日子；首篇只留下一篇、末篇只留上一篇，都没有时不出现。点一下换到那一篇，仍保持只读。</td></tr>
+    <tr><td>一致性</td><td>日视图与详情页都走同一套取数，同一天在两处看到的是同几条；皮肤、字号、壁纸对这两块完全生效。</td></tr>
+  </table>
+  <p><strong>验收：</strong>① 造两年同月同日的数据，日视图与详情页各出现对应年份；② 只有当年数据时整块不显示；③ 点击往年行进入那一天的详情，再返回仍停在原月；④ 详情页前后篇各翻一次，首末篇的按钮各自消失；⑤ 六套皮肤下这两块无残留异色块。</p>
+</div>
+
+<!-- ================= 5 交互视觉 ================= -->
+<h2 id="s5"><span class="n">05</span>交互与视觉规范</h2>
+
+<h3>5.1 布局</h3>
+<table>
+  <tr><th>项</th><th>规格</th></tr>
+  <tr><td>应用列宽</td><td>最大 480px 居中；≥560px 时出现极轻投影，模拟一张纸</td></tr>
+  <tr><td>页面边距</td><td>左右 18px；顶部与底部用 <code>--sat</code> / <code>--sab</code> 两个安全区变量（网页版等于 <code>env(safe-area-inset-*)</code>，安卓外壳由原生 insets 写入）</td></tr>
+  <tr><td>系统栏</td><td>边到边：不占独立色块，页面直接画到状态栏 / 导航栏后面；<code>theme-color</code> 随皮肤变（<code>#F6EFE2</code> / <code>#191714</code> / <code>#F7F8F9</code> / <code>#EADFC6</code> / <code>#FFF6F9</code> / <code>#070B14</code>），安卓外壳另用 <code>AppearanceLightStatusBars</code> 切图标明暗</td></tr>
+  <tr><td>底部 Tab 栏</td><td>高约 66px + 安全区；三格等分；图标 21px + 文字 11px</td></tr>
+  <tr><td>浮层</td><td>底部 Sheet，宽 100%（≤480px），圆角 20px（<code>press</code> 8px、<code>tech</code> 10px、<code>cute</code> 26px），最大高 88dvh，内容可滚动</td></tr>
+  <tr><td>详情页</td><td>全屏 Sheet（100dvh），内容可滚动</td></tr>
+  <tr><td>九宫格</td><td>3 列，gap 9px（<code>focus</code> 11px），格子宽高比 1:1；圆角随皮肤：<code>paper</code> 15px / <code>cozy</code> 16px / <code>focus</code> 19px / <code>press</code> 2px / <code>cute</code> 24px / <code>tech</code> 10px</td></tr>
+</table>
+
+<h3>5.2 色彩</h3>
+<p>六套皮肤各自定义同一组 CSS 变量（<code>--paper / --card / --ink / --ink-2 / --sub / --line / --accent …</code>，共 27 个），全部挂在 <code>&lt;html data-skin="…"&gt;</code> 上。下表只列每个皮肤最有辨识度的几个，其余见 <code>index.html</code> 的 <code>[data-skin]</code> 块。</p>
+<table>
+  <tr><th>皮肤</th><th>paper 底</th><th>card 卡片</th><th>ink 正文</th><th>accent 主色</th><th>气质</th></tr>
+  <tr><td><code>paper</code> 日系手账（默认）</td><td><code>#F6EFE2</code></td><td><code>#FFFCF4</code></td><td><code>#332C24</code></td><td><code>#3A6B58</code></td><td>暖纸、便签格、胶带、楷体标题</td></tr>
+  <tr><td><code>cozy</code> 暗黑治愈</td><td><code>#191714</code></td><td><code>#232019</code></td><td><code>#EFE6D8</code></td><td><code>#93C7AC</code></td><td>夜、暖光晕、低对比、大圆角</td></tr>
+  <tr><td><code>focus</code> 极简专注</td><td><code>#F1F3F6</code></td><td><code>rgba(255,255,255,.72)</code></td><td><code>#15181B</code></td><td><code>#1B1E22</code></td><td>大留白、毛玻璃、黑白为主</td></tr>
+  <tr><td><code>press</code> 复古打字机</td><td><code>#EADFC6</code></td><td><code>#F4ECD8</code></td><td><code>#2C3629</code></td><td><code>#3C5340</code></td><td>旧纸、深绿、等宽字、双线框</td></tr>
+  <tr><td><code>cute</code> 超萌可爱</td><td><code>#FFF6F9</code></td><td><code>#FFFFFF</code></td><td><code>#4A3340</code></td><td><code>#F1A2B8</code></td><td>马卡龙渐变、气泡卡、胶囊按钮、软阴影</td></tr>
+  <tr><td><code>tech</code> 赛博科技</td><td><code>#070B14</code></td><td><code>#0D1524</code></td><td><code>#E6F1FF</code></td><td><code>#35E1E8</code></td><td>深空底、青紫霓虹描边、科技网格、等宽字</td></tr>
+</table>
+<p>对比度按「正文 ≥ 4.5:1、大字 ≥ 3:1」逐套校准；说明文字（<code>--sub</code>）与 Tab 未选中文字（<code>--sub-2</code>）在六套里都 ≥ 4.5:1。深色有 <code>cozy</code> 与 <code>tech</code> 两套，其余四套是浅色，风格差异靠纸色、字体、圆角、描边与渐变，不靠明暗。</p>
+<p><code>cute</code> 的 <code>--accent</code> 是浅粉，只用作底色；需要它当文字色时（返回 / 完成 / Tab 选中）改用深一号的 <code>--accent-ink</code>（<code>#A83C5D</code>），否则对比度会掉到 1.9:1。</p>
+
+<h3>5.3 字体与字号</h3>
+<table>
+  <tr><th>层级</th><th>规格</th></tr>
+  <tr><td>界面字体</td><td>系统无衬线：-apple-system / PingFang SC / Microsoft YaHei，正文 15px / 行高 1.6</td></tr>
+  <tr><td>书写字体</td><td>衬线：Songti SC / Noto Serif SC，编辑器 17px / 行高 2.05，详情正文 16.5px</td></tr>
+  <tr><td>皮肤字体差异</td><td>只用系统内置字体，不外链。paper 标题用楷体（Kaiti SC / STKaiti / KaiTi）＋详情 15.5px / 行高 1.95；cozy 标题用宋体、详情行高 1.9；focus 全部无衬线（<code>--serif</code> 直接等于 <code>--sans</code>）、标题 300 字重；press 标题 / 标签 / 日期用等宽字（ui-monospace / SFMono-Regular / Consolas），正文用仿宋（FangSong），编辑器 16.5px / 行高 2.15、详情行高 2；cute 全部无衬线、标题 700 字重、编辑器 15.5px / 行高 1.95、详情行高 1.95；tech 标题 / 标签 / 日期 / Tab 用等宽字，编辑器 15.5px / 行高 1.95、详情行高 1.9</td></tr>
+  <tr><td>正文档位</td><td>小 / 中 / 大 = ×0.93 / ×1 / ×1.12（<code>--fs</code>）。所有正文基准都写成 <code>calc(px * var(--fs))</code>，所以上面的皮肤差异在多档位下同时成立；只作用于写作框与详情正文</td></tr>
+  <tr><td>页面标题</td><td>21px / 600（写作页日期标题 18.5px）</td></tr>
+  <tr><td>副标题</td><td>12.5px，ink-2</td></tr>
+  <tr><td>九宫格格子</td><td>11px / 1.5，最多 5 行截断</td></tr>
+  <tr><td>日历</td><td>日期 14px；字数角标 9.5px</td></tr>
+  <tr><td>按钮 / 标签</td><td>按钮 13.5px；Tab 文字 11px</td></tr>
+</table>
+
+<h3>5.4 动效</h3>
+<table>
+  <tr><th>场景</th><th>时长 / 曲线</th></tr>
+  <tr><td>浮层上滑</td><td>240ms，<code>cubic-bezier(.22,.61,.36,1)</code></td></tr>
+  <tr><td>遮罩淡入</td><td>220ms</td></tr>
+  <tr><td>按钮按下</td><td>scale(0.97)，120ms</td></tr>
+  <tr><td>皮肤切换</td><td>立即生效，不做过渡（避免半套样式的闪动）；只重绘设置浮层的内容，浮层本身不重开</td></tr>
+  <tr><td>cute 点按回弹</td><td>问题格按下时果冻回弹（<code>jelly</code> 460ms，<code>cubic-bezier(.3,1.3,.5,1)</code>）；<code>prefers-reduced-motion</code> 时关闭</td></tr>
+  <tr><td>tech 霓虹闪</td><td>问题格按下时描边闪一次（<code>neonflash</code> 500ms ease-out）；<code>prefers-reduced-motion</code> 时关闭</td></tr>
+  <tr><td>Toast</td><td>淡入 + 上移 8px，停留 1.7s 后消失</td></tr>
+</table>
+
+<h3>5.5 组件清单</h3>
+<table>
+  <tr><th>组件</th><th>用在哪</th><th>关键行为</th></tr>
+  <tr><td>TabBar</td><td>全局</td><td>三格固定底部；当前项变墨绿并加粗</td></tr>
+  <tr><td>Segmented</td><td>回顾</td><td>日 / 月 / 年，切换即时重绘</td></tr>
+  <tr><td>Sheet</td><td>问题编辑、提示、提交确认、设置</td><td>点遮罩 / Esc / 关闭按钮退出</td></tr>
+  <tr><td>PageSheet</td><td>只读详情</td><td>全屏，返回按钮在左上</td></tr>
+  <tr><td>Toast</td><td>全局</td><td>单行不换行，最多 86vw</td></tr>
+  <tr><td>Switch</td><td>设置</td><td>已随 v0.5 移除（原夜间模式开关的控件）</td></tr>
+  <tr><td>SkinTile</td><td>设置 · 界面风格</td><td>2×3 小样卡：迷你三格预览 + 名称 + 一句气质说明 + 选中对勾；整卡可点，<code>aria-pressed</code> 标记当前项</td></tr>
+  <tr><td>RangeRow</td><td>壁纸浓度</td><td>整行拖拽条，左模糊右清晰，右侧实时显示百分比</td></tr>
+  <tr><td>DayCell</td><td>日历</td><td>四态：普通 / 有内容 / 今天 / 未来</td></tr>
+  <tr><td>MonthRow</td><td>月视图</td><td>三态：有记录 / 没有记录 / 当前月（陶土圆点）</td></tr>
+  <tr><td>RecentRow</td><td>回顾日视图</td><td>月日 + 首行截断 + 字数，点行进详情</td></tr>
+  <tr><td>PromptList</td><td>写作提示浮层</td><td>序号 + 问题文字，一屏 9 条；底部一行说明 + 「收起」（次要）/「随机问题」（主要）两个按钮，随机后原地重绘、保住滚动位置</td></tr>
+  <tr><td>TipCard</td><td>问题板底部</td><td>标题 + 副标题 + 箭头，整卡可点，空态与填满都在</td></tr>
+  <tr><td>TipRow</td><td>小贴士目录</td><td>编号 + 标题 + 箭头，按「写作基础 / 技巧提升」分组</td></tr>
+  <tr><td>TipNav</td><td>小贴士正文底部</td><td>上一篇 / 下一篇带邻篇标题，2 行截断，首末篇自动缺省</td></tr>
+</table>
+
+<!-- ================= 6 非功能 ================= -->
+<h2 id="s6"><span class="n">06</span>非功能需求</h2>
+<table>
+  <tr><th>类别</th><th>要求</th><th>现状</th></tr>
+  <tr><td>体积与加载</td><td>单文件，无外部请求，冷启动 &lt; 200ms</td><td>单 HTML，零网络请求、零第三方脚本</td></tr>
+  <tr><td>兼容性</td><td>iOS Safari / Android Chrome / 桌面 Chrome·Edge 最新两个大版本</td><td>用到的特性：CSS 变量、dvh、aspect-ratio、backdrop-filter（有降级）</td></tr>
+  <tr><td>响应式</td><td>360px 不溢出；桌面居中不拉伸</td><td>360 / 390 / 1440 三档已截图验证</td></tr>
+  <tr><td>可访问性</td><td>正文对比度 ≥ 4.5:1；触控目标 ≥ 36px</td><td>全局按此校准；日历格约 55px，按钮高 36px</td></tr>
+  <tr><td>隐私</td><td>零上传、零埋点、零第三方脚本</td><td>无 fetch/XHR/外链</td></tr>
+  <tr><td>离线</td><td>断网可完全使用</td><td>满足（file:// 或本地静态托管均可）</td></tr>
+  <tr><td>存储</td><td>localStorage 配额内；写入失败有提示</td><td>约 5MB；壁纸压缩后通常 200–600KB</td></tr>
+  <tr><td>数据安全</td><td>写入异常不破坏既有数据</td><td>读写均 try/catch；损坏 JSON 自动降级为空库</td></tr>
+</table>
+
+<!-- ================= 7 验收 ================= -->
+<h2 id="s7"><span class="n">07</span>验收清单</h2>
+<p>以下为 v0.2 / v0.3 / v0.4 / v0.5 / v0.6 / v0.7 / v0.8 / v0.9 交付时的自测结论，全部使用真实浏览器截图核对。</p>
+<table>
+  <tr><th>#</th><th>检查项</th><th>预期</th><th>结果</th></tr>
+  <tr><td>1</td><td>九宫格编辑与保存</td><td>9 格独立、50 字上限、空值回退</td><td>通过</td></tr>
+  <tr><td>2</td><td>示例问题填充</td><td>一键 9 条，可逐格修改</td><td>通过</td></tr>
+  <tr><td>3</td><td>输入自动保存</td><td>0.4s 内写入并显示时间</td><td>通过</td></tr>
+  <tr><td>4</td><td>切换 Tab 不丢正文</td><td>回到写作页内容不变</td><td>通过</td></tr>
+  <tr><td>5</td><td>提交锁定</td><td>二次确认后只读，底部换成「去回顾看看」</td><td>通过</td></tr>
+  <tr><td>6</td><td>刷新后锁定保持</td><td>仍为只读并显示提交时间</td><td>通过</td></tr>
+  <tr><td>7</td><td>跨天自动锁定</td><td>次日昨天的草稿变只读</td><td>通过</td></tr>
+  <tr><td>8</td><td>日历回溯到下月</td><td>下月箭头禁用</td><td>通过</td></tr>
+  <tr><td>9</td><td>点空日期</td><td>提示「这天没有日记」不跳页</td><td>通过</td></tr>
+  <tr><td>10</td><td>月 / 年下钻</td><td>点月进日视图、点年进月视图</td><td>通过</td></tr>
+  <tr><td>11</td><td>导出文本 / JSON</td><td>文件名与内容格式正确</td><td>通过</td></tr>
+  <tr><td>12</td><td>界面风格切换</td><td>六张小样都在，点选即时换肤，重开保持</td><td>通过</td></tr>
+  <tr><td>13</td><td>深色下正文可读</td><td>对比度达标、锁定态一致</td><td>通过</td></tr>
+  <tr><td>14</td><td>壁纸设置与浓度</td><td>即时生效、拖拽连续可调、可移除</td><td>通过</td></tr>
+  <tr><td>15</td><td>窄屏 360px</td><td>无横向溢出</td><td>通过</td></tr>
+  <tr><td>16</td><td>桌面 1440px</td><td>居中不拉伸</td><td>通过</td></tr>
+  <tr><td>17</td><td>控制台</td><td>无报错</td><td>通过</td></tr>
+  <tr><td>18</td><td>锁定后出口</td><td>点「去回顾看看」落在回顾日视图且当天条目可见</td><td>通过</td></tr>
+  <tr><td>19</td><td>提示浮层列表</td><td>9 条在 390×844 下一屏看全</td><td>通过</td></tr>
+  <tr><td>20</td><td>月视图列表</td><td>只有 1 个有内容的月份时，其余 11 行「没有记录」不抢焦点</td><td>通过</td></tr>
+  <tr><td>21</td><td>最近写过</td><td>有内容时出现，点击进详情，无内容时整块不出现</td><td>通过</td></tr>
+  <tr><td>22</td><td>深色下的新列表</td><td>月视图 / 最近写过 / 提示列表配色正常</td><td>通过</td></tr>
+  <tr><td>23</td><td>小贴士入口</td><td>问题板空态与填满两种状态都能看到「写作小贴士」卡片</td><td>通过</td></tr>
+  <tr><td>24</td><td>小贴士目录</td><td>9 条齐全，写作基础 4 + 技巧提升 5，编号 01–09 连续</td><td>通过</td></tr>
+  <tr><td>25</td><td>小贴士正文</td><td>标题、导语、正文、「试着写一句」完整显示</td><td>通过</td></tr>
+  <tr><td>26</td><td>上一篇 / 下一篇</td><td>首篇无上一篇、末篇无下一篇，点击可连贯翻读</td><td>通过</td></tr>
+  <tr><td>27</td><td>返回层级</td><td>正文 → 目录 → 问题板，逐级返回不错位</td><td>通过</td></tr>
+  <tr><td>28</td><td>深色下的小贴士</td><td>正文与「试着写一句」提示块可读，无残留浅色块</td><td>通过</td></tr>
+  <tr><td>29</td><td>六套皮肤各有面貌</td><td>paper / cozy / focus / press / cute / tech 在问题板、写作、回顾、详情、设置、小贴士六类页面上都无残留异色块，360 与 390 宽无横向溢出</td><td>通过</td></tr>
+  <tr><td>30</td><td>六套皮肤的对比度</td><td>正文、说明文字、Tab 未选中文字均 ≥ 4.5:1（cute 的浅粉 accent 只作底色，文字改用 accent-ink）</td><td>通过</td></tr>
+  <tr><td>31</td><td>皮肤 × 壁纸</td><td>六套皮肤分别开着壁纸换皮肤，页头 / 页脚遮罩仍压得住图片，标题可读</td><td>通过</td></tr>
+  <tr><td>32</td><td>旧数据迁移</td><td>v0.4 的 <code>theme:"dark"</code> 升级后落在暗黑治愈，其余落在日系手账，<code>settings</code> 其余字段不丢</td><td>通过</td></tr>
+  <tr><td>33</td><td>导入往返</td><td>导出 JSON 再导入：天数、正文、锁定状态都对得上；空正文的草稿条被丢弃</td><td>通过</td></tr>
+  <tr><td>34</td><td>导入的合并与覆盖</td><td>合并只补空缺日期、不动已有内容；覆盖清空旧数据后换成文件内容；两种模式都给 Toast 回执</td><td>通过</td></tr>
+  <tr><td>35</td><td>坏文件不伤数据</td><td>不是 JSON / 空文件 / 日期非法时只给提示，现有日记与问题板不被改动</td><td>通过</td></tr>
+  <tr><td>36</td><td>随机问题</td><td>点一次换 9 条、互不重复；正文不动；刷新后仍是这 9 条</td><td>通过</td></tr>
+  <tr><td>37</td><td>状态栏融入页面</td><td>六套皮肤下，状态栏区域显示当前皮肤纸色或壁纸，没有独立色带；深色皮肤用浅色图标</td><td>通过</td></tr>
+  <tr><td>38</td><td>名字与图标</td><td>应用名「小鲸鱼」出现在标题、关于页与桌面图标下方；图标为鲸鱼矢量图，48px 下仍可辨认</td><td>通过</td></tr>
+  <tr><td>39</td><td>问题库扩容</td><td>关于页显示 10194 条；连点「随机问题」十次，每次 9 条都不同、无重复；库里没有两条只差标点的重复条目</td><td>通过</td></tr>
+  <tr><td>40</td><td>正文字号三档</td><td>小 / 中 / 大切换即时生效，只有正文变；六套皮肤各切一次比例仍成立；刷新保持</td><td>通过</td></tr>
+  <tr><td>41</td><td>往年的今天</td><td>两年同月同日的数据各出现在日视图与详情页；只有当年数据时整块不显示；点击进入那一天</td><td>通过</td></tr>
+  <tr><td>42</td><td>详情页前后篇</td><td>按日期相邻跳转，首末篇各只留一个按钮；换篇后仍只读</td><td>通过</td></tr>
+  <tr><td>43</td><td>上次备份提示</td><td>从未导出显示「还没导出过备份」并转提醒色；导出一次后变成「M月D日 · 距今 N 天」，30 天内为次要色</td><td>通过</td></tr>
+  <tr><td>44</td><td>首启空态</td><td>从没写过时写作页顶部出现一句提示，输入第一个字即消失；已有日记时不出现</td><td>通过</td></tr>
+</table>
+
+<!-- ================= 8 限制 ================= -->
+<h2 id="s8"><span class="n">08</span>已知限制与风险</h2>
+<table>
+  <tr><th>限制</th><th>影响</th><th>当前应对</th></tr>
+  <tr><td>数据只在本机浏览器</td><td>清缓存、换设备、无痕模式 → 全部丢失</td><td>设置页常驻提示；提供 JSON 导出；后续做自动备份</td></tr>
+  <tr><td>无导入</td><td><span class="tag done">已实现（v0.7）</span></td><td>见 FR-14「从 JSON 导入」，合并 / 覆盖两种模式。</td></tr>
+  <tr><td>00:00 换天</td><td>0 点后写的日记会被判为「第二天」</td><td>候选：写作日偏移到凌晨 4 点</td></tr>
+  <tr><td>壁纸不进备份</td><td>换设备需重新选图</td><td>导入功能一并处理</td></tr>
+  <tr><td>多标签页并发</td><td>两个标签同时写，后保存的覆盖前者（last-write-wins）</td><td>未做锁；正常使用单标签，风险可接受</td></tr>
+  <tr><td>localStorage 配额</td><td>约 5MB；满后写入失败</td><td>捕获异常并提示；壁纸压缩后体积可控</td></tr>
+  <tr><td>无编辑历史</td><td>锁定前误删无法撤销</td><td>自动保存 + 输入即时落库；不做版本树</td></tr>
+</table>
+
+<!-- ================= 9 版本 ================= -->
+<h2 id="s9"><span class="n">09</span>版本记录</h2>
+<table class="hist">
+  <tr><th>版本</th><th>日期</th><th>内容</th></tr>
+  <tr><td>v0.1</td><td>2026-10-21</td><td>写作闭环：问题板、写日记、提示浮层、提交锁定、跨天锁定、日/月/年回顾、详情、导出、设置。</td></tr>
+  <tr><td>v0.2</td><td>2026-10-21</td><td>外观：夜间/白天模式；自定义壁纸（压缩、浓度、移除）。设置页重构为「外观 / 日记」两组，新增「完成」关闭。</td></tr>
+  <tr><td>v0.3</td><td>2026-10-21</td><td>结构与语气修补：锁定后加「去回顾看看」出口；提示浮层与月视图改列表；回顾日视图加「最近写过」；问题板空态退为背景；切页 180ms 淡入；--sub 与 --ok-ink 提亮到 5.1 / 4.8:1。数据格式未变，可回滚（见 <code>archive/v0.2-rollback.md</code>）。</td></tr>
+  <tr><td>v0.4</td><td>2026-10-21</td><td>新增写作小贴士（FR-13）：问题板底部入口 + 目录页 + 9 篇离线内容（基础 4 / 技巧 5），每篇带「试着写一句」与上一篇 / 下一篇。问题板空态改为竖排清单。数据格式未变。</td></tr>
+  <tr><td>v0.5</td><td>2026-10-21</td><td>外观重做：原「夜间模式」开关换成 4 套界面风格（FR-11 改写）——日系手账（默认）/ 暗黑治愈 / 极简专注 / 复古打字机；设置页 2×2 真实小样，点选即时换肤、本机记忆、Toast 回执；旧 <code>settings.theme</code> 自动迁移（dark → cozy）。皮肤 = 27 个 CSS 变量 + 少量结构覆盖，全部系统字体，壁纸浓度对所有皮肤生效。数据向后兼容，<code>settings.skin</code> 为新增字段。</td></tr>
+  <tr><td>v0.6</td><td>2026-10-21</td><td>界面风格扩到 6 套：新增「超萌可爱」（<code>cute</code>，马卡龙三段渐变底、气泡格、胶囊按钮、果冻回弹）与「赛博科技」（<code>tech</code>，深空底 + 青紫霓虹描边、科技网格、等宽字、霓虹闪烁）；小样从 2×2 变 2×3。同时修正 cute 的浅粉 accent 当文字色只有 1.9:1 的问题（改走 <code>--accent-ink</code>）。旧皮肤选择与数据不受影响。</td></tr>
+  <tr><td>v0.7</td><td>2026-10-21</td><td>可恢复的备份 + 安卓包：设置新增「从 JSON 导入」（FR-14，读文件 → 预览 → 合并或覆盖，保留锁定状态）；导出在安卓外壳里改走系统「保存到」对话框。新增 <code>android-app/</code>（WebView + WebViewAssetLoader，无 INTERNET 权限）与 GitHub Actions 出包流程，<code>index.html</code> 仍是唯一源码。数据格式未变。</td></tr>
+  <tr><td>v0.8</td><td>2026-10-23</td><td>改名「小鲸鱼」并换鲸鱼图标（矢量，favicon 与安卓自适应图标同源）；写作提示浮层新增「随机问题」（FR-15，内置 5199 条问题库，一次抽 9 条、只换题不动正文）；状态栏与导航栏改为边到边，颜色跟随皮肤与壁纸、图标明暗随皮肤切换；安全区改用 <code>--sat</code> / <code>--sab</code>，网页取 env、安卓取原生 insets。数据格式未变。</td></tr>
+  <tr><td>v0.9</td><td>2026-10-23</td><td>问题库扩容：随机问题从 5199 条加到 10194 条（新增家庭与亲密关系 / 身体与健康 / 工作钱与社会 / 内心世界 / 感官与日常 5 段，每段 1000 条）；去重改为「忽略空格与标点」比较，防止只差标点的重复条目；抽签、浮层交互、正文保护不变，数据格式未变。安卓 <code>versionCode</code> 升到 9。</td></tr>
+  <tr><td>v0.9.1</td><td>2026-10-23</td><td>修输入法遮挡：安卓外壳把 IME 高度写进 <code>--kb</code>（<code>setSafeArea</code> 第三个参数），写作页整屏上缩、光标不再被键盘盖住；网页侧的 <code>visualViewport</code> 估算改为「原生没给才估算」，浮层与全屏页同样让出键盘；补 <code>vh</code> 兜底。数据格式未变，APK <code>versionCode</code> 升到 10。</td></tr>
+  <tr><td>v0.9.2</td><td>2026-10-23</td><td>回看的连贯性 + 正文字号：新增正文字号三档（FR-16，<code>--fs</code> 比例，只作用于写作框与详情正文）；回顾日视图与详情页新增「往年的今天」（FR-17，同月同日的历史条目，最多 3 条），详情页底部新增「上一篇 / 下一篇」按日期翻页；设置新增只读「上次备份」行（超过 30 天或从未导出时转提醒色）；写作页首启给一句空态提示，输入即消失；cute 皮肤下提醒文字由 <code>--rust</code> 改 <code>--rust-ink</code>（3.30:1 → 5.9:1）。新增 <code>settings.fs</code> 与 <code>settings.exportedAt</code> 两个可选字段，老数据照旧可读；APK <code>versionCode</code> 升到 11 / <code>versionName</code> 0.9.2（外壳 Java 未改）。</td></tr>
+  <tr><td>v0.3（建议）</td><td>—</td><td>PWA 添加到桌面；写作日偏移；锁定后自动备份；内置壁纸预设。</td></tr>
+</table>
+
+<!-- ================= 10 附录 ================= -->
+<h2 id="s10"><span class="n">10</span>附录</h2>
+
+<h3>A. 默认示例问题（9 条）</h3>
+<ol>
+  <li>今天最让我在意的一件小事是什么？</li>
+  <li>此刻我的情绪是什么，它从哪里来？</li>
+  <li>今天我做成了什么，哪怕很小？</li>
+  <li>有什么事让我犹豫或后悔？</li>
+  <li>今天和谁有过真正的交流？</li>
+  <li>今天冒出来的一个新念头是什么？</li>
+  <li>今天我忽略了什么？</li>
+  <li>如果今天重来一次，我会改哪件事？</li>
+  <li>明天我想把注意力放在哪里？</li>
+</ol>
+
+<h3>B. 文件结构</h3>
+<pre><code>writing-diary/
+├─ index.html                单文件应用（结构 + 样式 + 逻辑），仍是唯一源码
+├─ README.md                 使用说明与数据位置
+├─ PRD.html                  本文档
+├─ android-app/              安卓外壳（WebView，构建时把 index.html 复制进 assets）
+│  ├─ app/src/main/java/com/xiaojingyu/writingdiary/MainActivity.java
+│  ├─ app/src/main/AndroidManifest.xml   不申请 INTERNET 权限
+│  └─ README.md              云端出包 / 本机出包 / 装机的步骤
+├─ .github/workflows/android.yml         推送到 main 后自动出 debug APK
+└─ shots/                    自测截图</code></pre>
+
+<h3>C. 术语对照</h3>
+<table>
+  <tr><th>产品词</th><th>代码/数据词</th></tr>
+  <tr><td>问题板 / 提示</td><td><code>questions[9]</code></td></tr>
+  <tr><td>草稿</td><td><code>status: "draft"</code></td></tr>
+  <tr><td>提交锁定</td><td><code>status: "locked"</code> + <code>lockedAt</code></td></tr>
+  <tr><td>回顾</td><td><code>viewReview()</code> / day · month · year</td></tr>
+  <tr><td>界面风格</td><td><code>html[data-skin="…"]</code> + <code>settings.skin</code>（旧 <code>settings.theme</code> 只作迁移来源）</td></tr>
+  <tr><td>导入</td><td><code>parseBackup()</code> / <code>doImport('merge' | 'replace')</code>，入口 <code>#impfile</code></td></tr>
+  <tr><td>随机问题</td><td><code>RANDOM_Q</code> / <code>RANDOM_Q_RAW</code> / <code>randomQuestions()</code> / <code>refreshQuestionsRO()</code></td></tr>
+  <tr><td>壁纸浓度</td><td><code>--veil-a</code> / <code>--wp-blur</code> / <code>settings.wallv</code></td></tr>
+  <tr><td>安全区 / 键盘</td><td><code>--sat</code> / <code>--sab</code> / <code>--kb</code>：安卓外壳由 <code>MainActivity.sendSafeArea(top,bottom,kb)</code> 写入（kb 取 <code>Type.ime()</code> 底部内边距），网页取 <code>env(safe-area-inset-*)</code>，键盘高度由 <code>visualViewport</code> 估算；<code>--kb</code> 供 <code>.app</code> / <code>.wfoot</code> / <code>.tabbar</code> / 浮层让位</td></tr>
+</table>
+
+<div class="foot">
+  小鲸鱼 PRD v0.9.2 · 2026-10-23 · 对应实现 <code>index.html</code>（v0.9.2）<br>
+  本文档为 as-built 版本：描述的是当前代码的实际行为，不是设想。
+</div>
+
+</main>
+</div>
+</body>
+</html>

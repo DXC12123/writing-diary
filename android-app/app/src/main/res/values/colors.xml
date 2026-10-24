@@ -2,5 +2,6 @@
 <resources>
     <!-- 和网页版「日系手账」的纸色一致，冷启动时不会闪一下别的颜色 -->
     <color name="paper">#F6EFE2</color>
-    <color name="ic_launcher_bg">#191714</color>
+    <!-- 图标底色：浅海蓝，和鲸鱼本体同一个色系 -->
+    <color name="ic_launcher_bg">#DDF1FF</color>
 </resources>

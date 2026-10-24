@@ -10,8 +10,8 @@ android {
         applicationId 'com.xiaojingyu.writingdiary'
         minSdk 26
         targetSdk 34
-        versionCode 7
-        versionName '0.7'
+        versionCode 11
+        versionName '0.9.2'
     }
 
     buildTypes {
@@ -37,6 +37,8 @@ dependencies {
     // WebViewAssetLoader：把页面挂在 https://appassets.androidplatform.net 下，
     // 这样 localStorage 才有稳定的 https 源（直接开 file:// 在部分机型上会清零）
     implementation 'androidx.webkit:webkit:1.11.0'
+    // WindowCompat / WindowInsetsCompat：边到边显示 + 把安全区高度交给页面
+    implementation 'androidx.core:core:1.13.1'
 }
 
 /*
