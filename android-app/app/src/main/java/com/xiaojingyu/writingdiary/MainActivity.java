@@ -19,14 +19,18 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.webkit.WebViewAssetLoader;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import android.content.ClipData;
 import android.util.Base64;
 
 /**
@@ -291,6 +295,42 @@ public class MainActivity extends Activity {
                         pendingText = null;
                         pendingName = null;
                         toast("打不开保存对话框");
+                    }
+                }
+            });
+        }
+
+        /** 分享：base64 图片落到 cache/share，用 FileProvider 授权，再拉起系统分享面板
+         *  （微信 / QQ / QQ 空间都会出现在列表里；QQ 空间选「QQ空间」就进发动态界面） */
+        @JavascriptInterface
+        public void shareImage(final String name, final String mime, final String base64) {
+            final byte[] bytes;
+            try {
+                bytes = Base64.decode(base64, Base64.DEFAULT);
+            } catch (Exception e) {
+                toast("图片太大，分享失败");
+                return;
+            }
+            final String type = (mime == null || mime.isEmpty()) ? "image/png" : mime.split(";")[0];
+            runOnUiThread(new Runnable() {
+                @Override public void run() {
+                    try {
+                        File dir = new File(getCacheDir(), "share");
+                        if (!dir.exists()) dir.mkdirs();
+                        File f = new File(dir, (name == null || name.isEmpty()) ? "diary.png" : name);
+                        FileOutputStream out = new FileOutputStream(f);
+                        out.write(bytes);
+                        out.close();
+                        Uri uri = FileProvider.getUriForFile(MainActivity.this,
+                                getPackageName() + ".fileprovider", f);
+                        Intent i = new Intent(Intent.ACTION_SEND);
+                        i.setType(type);
+                        i.putExtra(Intent.EXTRA_STREAM, uri);
+                        i.setClipData(ClipData.newRawUri("", uri));
+                        i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        startActivity(Intent.createChooser(i, "分享到"));
+                    } catch (Exception e) {
+                        toast("分享失败，先保存图片再发");
                     }
                 }
             });
